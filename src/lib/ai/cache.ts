@@ -1,0 +1,60 @@
+import { prisma } from "@/lib/prisma";
+import type { AIResult } from "./types";
+
+const DEFAULT_TTL_MS = 3600000; // 1 hour
+
+function getTTL(): number {
+  const envTTL = process.env.AI_CACHE_TTL_MS;
+  if (envTTL) {
+    const parsed = parseInt(envTTL, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return DEFAULT_TTL_MS;
+}
+
+export async function getCachedResult(
+  ticketId: string
+): Promise<AIResult | null> {
+  const cached = await prisma.aICache.findUnique({
+    where: { ticketId },
+  });
+
+  if (!cached) return null;
+
+  if (new Date() > cached.expiresAt) {
+    await prisma.aICache.delete({ where: { ticketId } });
+    return null;
+  }
+
+  return cached.result as AIResult;
+}
+
+export async function setCachedResult(
+  ticketId: string,
+  result: AIResult
+): Promise<void> {
+  const ttl = getTTL();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + ttl);
+
+  await prisma.aICache.upsert({
+    where: { ticketId },
+    update: {
+      result: result as unknown as Record<string, unknown>,
+      createdAt: now,
+      expiresAt,
+    },
+    create: {
+      ticketId,
+      result: result as unknown as Record<string, unknown>,
+      createdAt: now,
+      expiresAt,
+    },
+  });
+}
+
+export async function invalidateCache(ticketId: string): Promise<void> {
+  await prisma.aICache.deleteMany({
+    where: { ticketId },
+  });
+}
