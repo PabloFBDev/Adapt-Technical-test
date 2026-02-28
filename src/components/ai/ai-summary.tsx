@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -118,16 +119,18 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
 
   if (!result && !streaming) {
     return (
-      <Card className="border-dashed border-ai/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-ai" />
-            <CardTitle className="text-lg">Resumo IA</CardTitle>
+      <Card className="border-dashed border-ai/30 bg-ai/[0.02]">
+        <CardContent className="flex flex-col items-center py-8">
+          <div className="rounded-full bg-ai/10 p-4 mb-3 animate-subtle-float">
+            <Sparkles className="h-6 w-6 text-ai" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white">
-            Gerar Resumo IA
+          <p className="text-sm font-medium mb-1">Analise com IA</p>
+          <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
+            Gere um resumo inteligente com sugestoes de proximos passos
+          </p>
+          <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white gap-2">
+            <Sparkles className="h-4 w-4" />
+            Gerar Resumo
           </Button>
         </CardContent>
       </Card>
@@ -140,7 +143,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
 
   return (
     <Card className={cn(
-      "border-ai/30 bg-ai/[0.02]",
+      "border-ai/30 bg-ai/[0.02] glass",
       streaming && "relative overflow-hidden"
     )}>
       {streaming && (
@@ -192,9 +195,9 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
             </h4>
             <ol className="space-y-1">
               {showSteps.map((step, i) => (
-                <li key={i} className="text-sm text-muted-foreground flex gap-2">
-                  <span className="font-mono text-ai shrink-0">
-                    {String(i + 1).padStart(2, "0")}.
+                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                  <span className="font-mono text-ai shrink-0 bg-ai/10 rounded-full h-5 w-5 flex items-center justify-center text-[11px] mt-0.5">
+                    {i + 1}
                   </span>
                   {step}
                 </li>

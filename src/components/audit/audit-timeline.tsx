@@ -56,7 +56,7 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
       <CardContent>
         <div className="relative space-y-6">
           {/* Vertical timeline line */}
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
           {auditLogs.map((log, index) => {
             const changes = log.changes as Record<
@@ -71,13 +71,13 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
               <div
                 key={log.id}
                 className={cn(
-                  "relative pl-7 animate-fade-in-up",
+                  "relative pl-7 animate-fade-in-up group/entry",
                   staggerClass
                 )}
               >
                 {/* Colored dot */}
                 <div className={cn(
-                  "absolute left-0 top-1 h-[15px] w-[15px] rounded-full border-2 border-background",
+                  "absolute left-0 top-1 h-[15px] w-[15px] rounded-full border-2 border-background ring-2 ring-transparent transition-all duration-200 group-hover/entry:ring-current/20",
                   dotColor
                 )} />
 
@@ -102,7 +102,7 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
                         <span className="text-muted-foreground line-through decoration-muted-foreground/40">
                           {formatValue(field, change.from)}
                         </span>
-                        {" → "}
+                        <span className="text-muted-foreground/40 mx-1">&#8594;</span>
                         <span>{formatValue(field, change.to)}</span>
                       </div>
                     ))}

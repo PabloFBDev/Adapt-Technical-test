@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { TicketList } from "@/components/tickets/ticket-list";
 import { TicketFilters } from "@/components/tickets/ticket-filters";
+import { TicketStats } from "@/components/tickets/ticket-stats";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TicketsPage() {
@@ -12,6 +13,8 @@ export default function TicketsPage() {
           painel de incidentes
         </p>
       </div>
+
+      <TicketStats />
 
       <Suspense fallback={<Skeleton className="h-10 w-full" />}>
         <TicketFilters />

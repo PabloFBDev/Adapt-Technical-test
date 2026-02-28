@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TicketDetail } from "@/components/tickets/ticket-detail";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import type { TicketWithRelations } from "@/types";
 
 export default async function TicketDetailPage({
@@ -32,9 +33,15 @@ export default async function TicketDetailPage({
   }
 
   return (
-    <TicketDetail
-      ticket={ticket as TicketWithRelations}
-      isAuthenticated={!!session}
-    />
+    <>
+      <Breadcrumbs items={[
+        { label: "Tickets", href: "/tickets" },
+        { label: `#${ticket.id.slice(0, 8)}` },
+      ]} />
+      <TicketDetail
+        ticket={ticket as TicketWithRelations}
+        isAuthenticated={!!session}
+      />
+    </>
   );
 }

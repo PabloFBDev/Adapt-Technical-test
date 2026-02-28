@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Inbox, AlertTriangle, Plus } from "lucide-react";
 import { TicketCard } from "./ticket-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -46,8 +48,14 @@ export function TicketList() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-destructive font-mono text-sm mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
+        <div className="rounded-full bg-destructive/10 p-6 mb-4">
+          <AlertTriangle className="h-10 w-10 text-destructive/50" />
+        </div>
+        <p className="text-lg font-medium mb-1">Erro ao carregar</p>
+        <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+          {error}
+        </p>
         <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
       </div>
     );
@@ -55,11 +63,20 @@ export function TicketList() {
 
   if (!data || data.data.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">Nenhum ticket encontrado</p>
-        <p className="text-muted-foreground text-sm mt-1">
-          Tente ajustar os filtros ou criar um novo ticket.
+      <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
+        <div className="rounded-full bg-muted p-6 mb-4">
+          <Inbox className="h-10 w-10 text-muted-foreground/50" />
+        </div>
+        <p className="text-lg font-medium mb-1">Nenhum ticket encontrado</p>
+        <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+          Tente ajustar os filtros ou crie um novo ticket para comecar.
         </p>
+        <Link href="/tickets/new">
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Ticket
+          </Button>
+        </Link>
       </div>
     );
   }

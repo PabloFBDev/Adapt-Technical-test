@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export function TicketFilters() {
   const router = useRouter();
@@ -60,13 +61,16 @@ export function TicketFilters() {
     router.push("/tickets");
   };
 
-  const hasFilters =
-    searchParams.has("status") ||
-    searchParams.has("priority") ||
-    searchParams.has("search");
+  const activeFilterCount = [
+    searchParams.has("status"),
+    searchParams.has("priority"),
+    searchParams.has("search"),
+  ].filter(Boolean).length;
+
+  const hasFilters = activeFilterCount > 0;
 
   return (
-    <div className="p-4 rounded-lg bg-card border border-border/50">
+    <div className="p-4 rounded-lg glass border border-border/50">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative sm:max-w-md w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -106,8 +110,11 @@ export function TicketFilters() {
           </SelectContent>
         </Select>
         {hasFilters && (
-          <Button variant="ghost" onClick={clearFilters} className="sm:w-auto">
+          <Button variant="ghost" onClick={clearFilters} className="sm:w-auto animate-scale-in font-mono text-xs gap-1">
             Limpar filtros
+            <Badge variant="secondary" className="font-mono text-[10px] h-4 min-w-4 px-1">
+              {activeFilterCount}
+            </Badge>
           </Button>
         )}
       </div>

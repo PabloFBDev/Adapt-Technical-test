@@ -84,7 +84,7 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
 
           <Separator />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm p-4 rounded-lg bg-muted/30">
             <div>
               <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
                 Criado por

@@ -80,6 +80,19 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl animate-fade-in-up">
+      {(() => {
+        const filledFields = [title, description, priority].filter(Boolean).length;
+        const progress = (filledFields / 3) * 100;
+        return (
+          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        );
+      })()}
+
       <div className="space-y-2">
         <Label htmlFor="title" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Titulo
@@ -92,7 +105,10 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           className="h-11"
         />
         {errors.title && (
-          <p className="font-mono text-xs text-destructive">{errors.title[0]}</p>
+          <p className="font-mono text-xs text-destructive flex items-center gap-1">
+            <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
+            {errors.title[0]}
+          </p>
         )}
       </div>
 
@@ -107,9 +123,17 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           placeholder="Descreva o ticket em detalhes..."
           rows={6}
         />
-        {errors.description && (
-          <p className="font-mono text-xs text-destructive">{errors.description[0]}</p>
-        )}
+        <div className="flex justify-between">
+          {errors.description ? (
+            <p className="font-mono text-xs text-destructive flex items-center gap-1">
+              <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
+              {errors.description[0]}
+            </p>
+          ) : <span />}
+          <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
+            {description.length}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -127,7 +151,10 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           </SelectContent>
         </Select>
         {errors.priority && (
-          <p className="font-mono text-xs text-destructive">{errors.priority[0]}</p>
+          <p className="font-mono text-xs text-destructive flex items-center gap-1">
+            <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
+            {errors.priority[0]}
+          </p>
         )}
       </div>
 
