@@ -47,29 +47,45 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     const provider = getAIProvider();
 
+    const STREAM_TIMEOUT_MS = 30_000;
+
     const stream = new ReadableStream({
       async start(controller) {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error("Stream timeout"));
+          }, STREAM_TIMEOUT_MS);
+        });
+
         try {
           const generator = provider.generateSummary({ title, description });
 
-          for await (const chunk of generator) {
-            const data = JSON.stringify(chunk);
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+          const processStream = async () => {
+            for await (const chunk of generator) {
+              const data = JSON.stringify(chunk);
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
 
-            // If this is the done event, cache the result
-            if (chunk.type === "done" && ticketId) {
-              await setCachedResult(ticketId, chunk.result);
+              if (chunk.type === "done" && ticketId) {
+                await setCachedResult(ticketId, chunk.result);
+              }
             }
-          }
+          };
+
+          await Promise.race([processStream(), timeoutPromise]);
 
           controller.close();
-        } catch {
-          const errorData = JSON.stringify({
-            type: "error",
-            message: "Failed to generate summary",
-          });
+        } catch (err) {
+          const message =
+            err instanceof Error && err.message === "Stream timeout"
+              ? "Summary generation timed out"
+              : "Failed to generate summary";
+          const errorData = JSON.stringify({ type: "error", message });
           controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
           controller.close();
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
     });

@@ -18,7 +18,9 @@ function validateEmail(email: string): string | null {
 
 function validatePassword(password: string): string | null {
   if (!password) return "Senha e obrigatoria";
-  if (password.length < 6) return "Minimo 6 caracteres";
+  if (password.length < 8) return "Minimo 8 caracteres";
+  if (!/[a-zA-Z]/.test(password)) return "Deve conter pelo menos uma letra";
+  if (!/[0-9]/.test(password)) return "Deve conter pelo menos um numero";
   return null;
 }
 

@@ -27,6 +27,7 @@ describe("GET /api/tickets", () => {
   });
 
   it("should return paginated list of tickets", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findMany.mockResolvedValue([mockTicket]);
     mockPrisma.ticket.count.mockResolvedValue(1);
 
@@ -42,7 +43,17 @@ describe("GET /api/tickets", () => {
     expect(data.pagination.total).toBe(1);
   });
 
+  it("should return 401 when not authenticated", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const request = new Request("http://localhost/api/tickets");
+    const response = await GET(request);
+
+    expect(response.status).toBe(401);
+  });
+
   it("should filter by status", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findMany.mockResolvedValue([]);
     mockPrisma.ticket.count.mockResolvedValue(0);
 
@@ -57,6 +68,7 @@ describe("GET /api/tickets", () => {
   });
 
   it("should search by title/description", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findMany.mockResolvedValue([]);
     mockPrisma.ticket.count.mockResolvedValue(0);
 
@@ -148,6 +160,7 @@ describe("GET /api/tickets/:id", () => {
   });
 
   it("should return ticket details", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findUnique.mockResolvedValue({
       ...mockTicket,
       auditLogs: [],
@@ -165,6 +178,7 @@ describe("GET /api/tickets/:id", () => {
   });
 
   it("should return 404 for non-existent ticket", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findUnique.mockResolvedValue(null);
 
     const request = new Request("http://localhost/api/tickets/non-existent");
@@ -173,6 +187,17 @@ describe("GET /api/tickets/:id", () => {
     });
 
     expect(response.status).toBe(404);
+  });
+
+  it("should return 401 when not authenticated", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1");
+    const response = await GET_DETAIL(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(401);
   });
 });
 
@@ -245,5 +270,23 @@ describe("PATCH /api/tickets/:id", () => {
     });
 
     expect(response.status).toBe(401);
+  });
+
+  it("should return 403 when user does not own the ticket", async () => {
+    const otherUser = { id: "user-2", email: "other@opscopilot.com", name: "Other" };
+    mockGetSession.mockResolvedValue({ user: otherUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "done" }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(403);
   });
 });

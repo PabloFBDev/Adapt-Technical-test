@@ -4,13 +4,19 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    console.error("Seed is not allowed in production environment.");
+    process.exit(1);
+  }
+
   // Limpar base de dados (ordem respeita foreign keys)
   await prisma.aICache.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.ticket.deleteMany();
   await prisma.user.deleteMany();
 
-  const hashedPassword = await bcrypt.hash("password123", 10);
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD ?? "password123";
+  const hashedPassword = await bcrypt.hash(seedPassword, 10);
 
   const user = await prisma.user.create({
     data: {

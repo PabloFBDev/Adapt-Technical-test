@@ -11,6 +11,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const ticket = await prisma.ticket.findUnique({
       where: { id },
@@ -53,6 +58,10 @@ export async function PATCH(
 
     if (!existingTicket) {
       throw new NotFoundError("Ticket not found");
+    }
+
+    if (existingTicket.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -100,31 +109,34 @@ export async function PATCH(
       return NextResponse.json({ data: existingTicket });
     }
 
-    // Update ticket
-    const updatedTicket = await prisma.ticket.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && {
-          description: data.description,
-        }),
-        ...(data.priority !== undefined && { priority: data.priority }),
-        ...(data.status !== undefined && { status: data.status }),
-        ...(data.tags !== undefined && { tags: data.tags }),
-      },
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-      },
-    });
+    // Update ticket and create audit log in a transaction
+    const updatedTicket = await prisma.$transaction(async (tx) => {
+      const updated = await tx.ticket.update({
+        where: { id },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.description !== undefined && {
+            description: data.description,
+          }),
+          ...(data.priority !== undefined && { priority: data.priority }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.tags !== undefined && { tags: data.tags }),
+        },
+        include: {
+          user: { select: { id: true, email: true, name: true } },
+        },
+      });
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        ticketId: id,
-        userId: session.user.id,
-        action: hasStatusChange ? "status_changed" : "updated",
-        changes: JSON.parse(JSON.stringify(changes)),
-      },
+      await tx.auditLog.create({
+        data: {
+          ticketId: id,
+          userId: session.user.id,
+          action: hasStatusChange ? "status_changed" : "updated",
+          changes: JSON.parse(JSON.stringify(changes)),
+        },
+      });
+
+      return updated;
     });
 
     // Invalidate AI cache if title or description changed

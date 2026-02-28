@@ -16,6 +16,15 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Enforce password policy: 8+ chars, at least one letter and one number
+        if (
+          credentials.password.length < 8 ||
+          !/[a-zA-Z]/.test(credentials.password) ||
+          !/[0-9]/.test(credentials.password)
+        ) {
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });

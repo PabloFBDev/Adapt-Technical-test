@@ -8,6 +8,11 @@ import type { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = ticketQuerySchema.parse(
       Object.fromEntries(searchParams.entries()),
@@ -72,33 +77,36 @@ export async function POST(request: Request) {
     // Deduplicate tags
     const uniqueTags = [...new Set(data.tags)];
 
-    const ticket = await prisma.ticket.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        tags: uniqueTags,
-        userId: session.user.id,
-      },
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-      },
-    });
-
-    // Create audit log for creation
-    await prisma.auditLog.create({
-      data: {
-        ticketId: ticket.id,
-        userId: session.user.id,
-        action: "created",
-        changes: {
-          title: { from: null, to: ticket.title },
-          description: { from: null, to: ticket.description },
-          priority: { from: null, to: ticket.priority },
-          status: { from: null, to: ticket.status },
-          tags: { from: null, to: ticket.tags },
+    const ticket = await prisma.$transaction(async (tx) => {
+      const created = await tx.ticket.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          tags: uniqueTags,
+          userId: session.user.id,
         },
-      },
+        include: {
+          user: { select: { id: true, email: true, name: true } },
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          ticketId: created.id,
+          userId: session.user.id,
+          action: "created",
+          changes: {
+            title: { from: null, to: created.title },
+            description: { from: null, to: created.description },
+            priority: { from: null, to: created.priority },
+            status: { from: null, to: created.status },
+            tags: { from: null, to: created.tags },
+          },
+        },
+      });
+
+      return created;
     });
 
     return NextResponse.json({ data: ticket }, { status: 201 });

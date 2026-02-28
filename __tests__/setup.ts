@@ -1,8 +1,8 @@
 import { vi } from "vitest";
 
 // Mock Prisma client
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const mockPrismaClient = {
     ticket: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -24,8 +24,12 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
-  },
-}));
+    $transaction: vi.fn(async (fn: (tx: typeof mockPrismaClient) => Promise<unknown>) => {
+      return fn(mockPrismaClient);
+    }),
+  };
+  return { prisma: mockPrismaClient };
+});
 
 // Mock NextAuth
 vi.mock("next-auth", () => ({
