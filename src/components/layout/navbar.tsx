@@ -8,16 +8,18 @@ export function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <nav className="border-b bg-background">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/tickets" className="text-lg font-semibold">
-          Ops Copilot
+    <nav className="bg-card/80 backdrop-blur-sm sticky top-0 z-50 border-b border-border/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+        <Link href="/tickets" className="text-lg font-mono animate-brand-glow">
+          <span className="font-semibold">ops</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-semibold">copilot</span>
         </Link>
 
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <span className="text-sm text-muted-foreground hidden sm:inline">
+              <span className="font-mono text-xs text-muted-foreground hidden sm:inline">
                 {session.user.email}
               </span>
               <Link href="/tickets/new">

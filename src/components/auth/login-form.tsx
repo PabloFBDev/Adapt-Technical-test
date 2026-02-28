@@ -37,14 +37,21 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">Login</CardTitle>
+    <Card className="relative w-full max-w-md shadow-xl shadow-primary/5 animate-fade-in-up">
+      <CardHeader className="text-center">
+        <div className="font-mono text-lg mb-2">
+          <span className="font-semibold">ops</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-semibold">copilot</span>
+        </div>
+        <CardTitle className="text-2xl">Login</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wider">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -55,7 +62,9 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wider">
+              Senha
+            </Label>
             <Input
               id="password"
               type="password"
@@ -66,10 +75,19 @@ export function LoginForm() {
             />
           </div>
           {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+            <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-center">
+              <p className="text-sm font-mono text-destructive">{error}</p>
+            </div>
           )}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Entrando...
+              </span>
+            ) : (
+              "Entrar"
+            )}
           </Button>
         </form>
       </CardContent>

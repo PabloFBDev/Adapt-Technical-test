@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -65,46 +66,51 @@ export function TicketFilters() {
     searchParams.has("search");
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <Input
-        placeholder="Buscar tickets..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="sm:max-w-xs"
-      />
-      <Select
-        value={searchParams.get("status") || "all"}
-        onValueChange={(v) => updateParams("status", v)}
-      >
-        <SelectTrigger className="sm:w-40">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos status</SelectItem>
-          <SelectItem value="open">Aberto</SelectItem>
-          <SelectItem value="in_progress">Em Progresso</SelectItem>
-          <SelectItem value="done">Concluido</SelectItem>
-        </SelectContent>
-      </Select>
-      <Select
-        value={searchParams.get("priority") || "all"}
-        onValueChange={(v) => updateParams("priority", v)}
-      >
-        <SelectTrigger className="sm:w-40">
-          <SelectValue placeholder="Prioridade" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todas prioridades</SelectItem>
-          <SelectItem value="low">Baixa</SelectItem>
-          <SelectItem value="medium">Media</SelectItem>
-          <SelectItem value="high">Alta</SelectItem>
-        </SelectContent>
-      </Select>
-      {hasFilters && (
-        <Button variant="ghost" onClick={clearFilters} className="sm:w-auto">
-          Limpar filtros
-        </Button>
-      )}
+    <div className="p-4 rounded-lg bg-card border border-border/50">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative sm:max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar tickets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={searchParams.get("status") || "all"}
+          onValueChange={(v) => updateParams("status", v)}
+        >
+          <SelectTrigger className="sm:w-50 font-mono text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos status</SelectItem>
+            <SelectItem value="open">Aberto</SelectItem>
+            <SelectItem value="in_progress">Em Progresso</SelectItem>
+            <SelectItem value="done">Concluido</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={searchParams.get("priority") || "all"}
+          onValueChange={(v) => updateParams("priority", v)}
+        >
+          <SelectTrigger className="sm:w-50 font-mono text-sm">
+            <SelectValue placeholder="Prioridade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas prioridades</SelectItem>
+            <SelectItem value="low">Baixa</SelectItem>
+            <SelectItem value="medium">Media</SelectItem>
+            <SelectItem value="high">Alta</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasFilters && (
+          <Button variant="ghost" onClick={clearFilters} className="sm:w-auto">
+            Limpar filtros
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

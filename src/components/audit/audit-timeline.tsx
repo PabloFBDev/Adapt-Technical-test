@@ -1,11 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { AuditLogWithUser } from "@/types";
 
 const actionLabels = {
   created: "Criado",
   updated: "Atualizado",
   status_changed: "Status alterado",
+} as const;
+
+const actionDotColors = {
+  created: "bg-status-done",
+  updated: "bg-primary",
+  status_changed: "bg-status-progress",
 } as const;
 
 const fieldLabels: Record<string, string> = {
@@ -48,39 +54,59 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
         <CardTitle className="text-lg">Historico de Mudancas</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {auditLogs.map((log) => {
+        <div className="relative space-y-6">
+          {/* Vertical timeline line */}
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
+
+          {auditLogs.map((log, index) => {
             const changes = log.changes as Record<
               string,
               { from: unknown; to: unknown }
             >;
+            const action = log.action as keyof typeof actionDotColors;
+            const dotColor = actionDotColors[action] || "bg-muted-foreground";
+            const staggerClass = index < 5 ? `stagger-${index + 1}` : "";
 
             return (
-              <div key={log.id} className="border-l-2 border-muted pl-4 pb-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {actionLabels[log.action as keyof typeof actionLabels] || log.action}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {log.user.name || log.user.email}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(log.createdAt).toLocaleString("pt-BR")}
-                  </span>
-                </div>
+              <div
+                key={log.id}
+                className={cn(
+                  "relative pl-7 animate-fade-in-up",
+                  staggerClass
+                )}
+              >
+                {/* Colored dot */}
+                <div className={cn(
+                  "absolute left-0 top-1 h-[15px] w-[15px] rounded-full border-2 border-background",
+                  dotColor
+                )} />
+
                 <div className="space-y-1">
-                  {Object.entries(changes).map(([field, change]) => (
-                    <div key={field} className="text-sm">
-                      <span className="font-medium">
-                        {fieldLabels[field] || field}:
-                      </span>{" "}
-                      <span className="text-muted-foreground">
-                        {formatValue(field, change.from)}
-                      </span>
-                      {" → "}
-                      <span>{formatValue(field, change.to)}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-medium">
+                      {actionLabels[action] || log.action}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {log.user.name || log.user.email}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                      {new Date(log.createdAt).toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(changes).map(([field, change]) => (
+                      <div key={field} className="text-sm">
+                        <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                          {fieldLabels[field] || field}:
+                        </span>{" "}
+                        <span className="text-muted-foreground line-through decoration-muted-foreground/40">
+                          {formatValue(field, change.from)}
+                        </span>
+                        {" → "}
+                        <span>{formatValue(field, change.to)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             );

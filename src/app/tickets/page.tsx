@@ -6,8 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function TicketsPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Tickets</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
+        <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mt-1">
+          painel de incidentes
+        </p>
       </div>
 
       <Suspense fallback={<Skeleton className="h-10 w-full" />}>

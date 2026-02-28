@@ -79,22 +79,27 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl animate-fade-in-up">
       <div className="space-y-2">
-        <Label htmlFor="title">Titulo</Label>
+        <Label htmlFor="title" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Titulo
+        </Label>
         <Input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Titulo do ticket"
+          className="h-11"
         />
         {errors.title && (
-          <p className="text-sm text-red-500">{errors.title[0]}</p>
+          <p className="font-mono text-xs text-destructive">{errors.title[0]}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Descricao</Label>
+        <Label htmlFor="description" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Descricao
+        </Label>
         <Textarea
           id="description"
           value={description}
@@ -103,14 +108,16 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           rows={6}
         />
         {errors.description && (
-          <p className="text-sm text-red-500">{errors.description[0]}</p>
+          <p className="font-mono text-xs text-destructive">{errors.description[0]}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label>Prioridade</Label>
+        <Label className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Prioridade
+        </Label>
         <Select value={priority} onValueChange={setPriority}>
-          <SelectTrigger>
+          <SelectTrigger className="h-11">
             <SelectValue placeholder="Selecione a prioridade" />
           </SelectTrigger>
           <SelectContent>
@@ -120,22 +127,29 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           </SelectContent>
         </Select>
         {errors.priority && (
-          <p className="text-sm text-red-500">{errors.priority[0]}</p>
+          <p className="font-mono text-xs text-destructive">{errors.priority[0]}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label>Tags</Label>
+        <Label className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Tags
+        </Label>
         <TagInput value={tags} onChange={setTags} error={errors.tags?.[0]} />
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-4 border-t border-border/50">
         <Button type="submit" disabled={loading}>
-          {loading
-            ? "Salvando..."
-            : mode === "create"
-              ? "Criar Ticket"
-              : "Salvar Alteracoes"}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Salvando...
+            </span>
+          ) : mode === "create" ? (
+            "Criar Ticket"
+          ) : (
+            "Salvar Alteracoes"
+          )}
         </Button>
         <Button
           type="button"

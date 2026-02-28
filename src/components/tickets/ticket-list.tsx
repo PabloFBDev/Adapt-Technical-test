@@ -47,7 +47,7 @@ export function TicketList() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
+        <p className="text-destructive font-mono text-sm mb-4">{error}</p>
         <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
       </div>
     );
@@ -75,31 +75,33 @@ export function TicketList() {
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        {data.data.map((ticket) => (
-          <TicketCard key={ticket.id} ticket={ticket} />
+        {data.data.map((ticket, index) => (
+          <TicketCard key={ticket.id} ticket={ticket} index={index} />
         ))}
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4">
+        <div className="flex items-center justify-center gap-2 pt-4 border-t border-border/50">
           <Button
             variant="outline"
             size="sm"
             onClick={() => goToPage(pagination.page - 1)}
             disabled={pagination.page <= 1}
+            className="font-mono"
           >
-            Anterior
+            &larr; Anterior
           </Button>
-          <span className="text-sm text-muted-foreground">
-            Pagina {pagination.page} de {pagination.totalPages} ({pagination.total} tickets)
+          <span className="font-mono text-sm text-muted-foreground tabular-nums">
+            {pagination.page} / {pagination.totalPages} ({pagination.total})
           </span>
           <Button
             variant="outline"
             size="sm"
             onClick={() => goToPage(pagination.page + 1)}
             disabled={pagination.page >= pagination.totalPages}
+            className="font-mono"
           >
-            Proxima
+            Proxima &rarr;
           </Button>
         </div>
       )}

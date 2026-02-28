@@ -53,11 +53,16 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6 animate-fade-in-up">
+      <Card className="border-l-[3px] border-l-primary">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
-            <CardTitle className="text-xl">{ticket.title}</CardTitle>
+            <div>
+              <span className="font-mono text-xs text-muted-foreground">
+                #{ticket.id.slice(0, 8)}
+              </span>
+              <CardTitle className="text-xl">{ticket.title}</CardTitle>
+            </div>
             <div className="flex gap-2 shrink-0">
               <StatusBadge status={status} />
               <PriorityBadge priority={ticket.priority} />
@@ -71,7 +76,7 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
 
           <div className="flex flex-wrap gap-1">
             {ticket.tags.map((tag) => (
-              <Badge key={tag} variant="outline">
+              <Badge key={tag} variant="outline" className="font-mono text-[11px]">
                 {tag}
               </Badge>
             ))}
@@ -79,21 +84,41 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
 
           <Separator />
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm text-muted-foreground">
-            <div className="space-y-1">
-              <p>Criado por: {ticket.user.name || ticket.user.email}</p>
-              <p>Criado em: {new Date(ticket.createdAt).toLocaleString("pt-BR")}</p>
-              <p>Atualizado em: {new Date(ticket.updatedAt).toLocaleString("pt-BR")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
+                Criado por
+              </span>
+              <span>{ticket.user.name || ticket.user.email}</span>
             </div>
+            <div>
+              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
+                Criado em
+              </span>
+              <span className="font-mono tabular-nums">
+                {new Date(ticket.createdAt).toLocaleString("pt-BR")}
+              </span>
+            </div>
+            <div>
+              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
+                Atualizado em
+              </span>
+              <span className="font-mono tabular-nums">
+                {new Date(ticket.updatedAt).toLocaleString("pt-BR")}
+              </span>
+            </div>
+          </div>
 
-            {isAuthenticated && (
+          {isAuthenticated && (
+            <>
+              <Separator />
               <div className="flex items-center gap-3">
                 <Select
                   value={status}
                   onValueChange={handleStatusChange}
                   disabled={changingStatus}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 font-mono text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -109,8 +134,8 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
                   </Button>
                 </Link>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
