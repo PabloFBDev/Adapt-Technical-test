@@ -123,7 +123,7 @@ export async function PATCH(
         ticketId: id,
         userId: session.user.id,
         action: hasStatusChange ? "status_changed" : "updated",
-        changes,
+        changes: JSON.parse(JSON.stringify(changes)),
       },
     });
 

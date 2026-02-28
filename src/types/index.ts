@@ -1,8 +1,12 @@
 import type { Ticket, AuditLog, User, AICache } from "@prisma/client";
 
+export type AuditLogWithUser = AuditLog & {
+  user: Pick<User, "id" | "email" | "name">;
+};
+
 export type TicketWithRelations = Ticket & {
   user: Pick<User, "id" | "email" | "name">;
-  auditLogs: AuditLog[];
+  auditLogs: AuditLogWithUser[];
   aiCache: AICache | null;
 };
 

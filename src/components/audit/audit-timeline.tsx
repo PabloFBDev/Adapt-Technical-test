@@ -1,10 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { AuditLog, User } from "@prisma/client";
-
-type AuditLogWithUser = AuditLog & {
-  user: Pick<User, "id" | "email" | "name">;
-};
+import type { AuditLogWithUser } from "@/types";
 
 const actionLabels = {
   created: "Criado",

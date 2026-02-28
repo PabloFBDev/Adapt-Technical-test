@@ -26,7 +26,7 @@ export async function getCachedResult(
     return null;
   }
 
-  return cached.result as AIResult;
+  return cached.result as unknown as AIResult;
 }
 
 export async function setCachedResult(
@@ -40,13 +40,13 @@ export async function setCachedResult(
   await prisma.aICache.upsert({
     where: { ticketId },
     update: {
-      result: result as unknown as Record<string, unknown>,
+      result: JSON.parse(JSON.stringify(result)),
       createdAt: now,
       expiresAt,
     },
     create: {
       ticketId,
-      result: result as unknown as Record<string, unknown>,
+      result: JSON.parse(JSON.stringify(result)),
       createdAt: now,
       expiresAt,
     },
