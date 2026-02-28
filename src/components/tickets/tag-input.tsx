@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
+import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,18 +42,21 @@ export function TagInput({ value, onChange, maxTags = 10, error }: TagInputProps
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1 mb-2">
-        {value.map((tag, index) => (
-          <Badge
-            key={index}
-            variant="secondary"
-            className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => removeTag(index)}
-          >
-            {tag} &times;
-          </Badge>
-        ))}
-      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((tag, index) => (
+            <Badge
+              key={index}
+              variant="secondary"
+              className="cursor-pointer font-mono text-[11px] gap-1 pr-1.5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
+              onClick={() => removeTag(index)}
+            >
+              {tag}
+              <X className="h-3 w-3" />
+            </Badge>
+          ))}
+        </div>
+      )}
       <Input
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
@@ -60,7 +64,12 @@ export function TagInput({ value, onChange, maxTags = 10, error }: TagInputProps
         placeholder={value.length >= maxTags ? "Limite atingido" : "Adicionar tag (Enter ou virgula)"}
         disabled={value.length >= maxTags}
       />
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+          <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
