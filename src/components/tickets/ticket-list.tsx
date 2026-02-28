@@ -14,12 +14,14 @@ export function TicketList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const searchString = searchParams.toString();
+
   useEffect(() => {
     const fetchTickets = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/tickets?${searchParams.toString()}`);
+        const res = await fetch(`/api/tickets?${searchString}`);
         if (!res.ok) throw new Error("Falha ao carregar tickets");
         const json = await res.json();
         setData(json);
@@ -30,7 +32,7 @@ export function TicketList() {
       }
     };
     fetchTickets();
-  }, [searchParams]);
+  }, [searchString]);
 
   if (loading) {
     return (

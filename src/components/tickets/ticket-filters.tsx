@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,25 +19,40 @@ export function TicketFilters() {
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const current = new URLSearchParams(window.location.search);
       if (value && value !== "all") {
-        params.set(key, value);
+        current.set(key, value);
       } else {
-        params.delete(key);
+        current.delete(key);
       }
-      params.set("page", "1");
-      router.push(`/tickets?${params.toString()}`);
+      current.set("page", "1");
+      router.push(`/tickets?${current.toString()}`);
     },
-    [router, searchParams]
+    [router]
   );
 
   // Debounced search
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
-      updateParams("search", search || null);
+      const params = new URLSearchParams(searchParams.toString());
+      if (search) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`/tickets?${params.toString()}`);
     }, 300);
+
     return () => clearTimeout(timer);
-  }, [search, updateParams]);
+  }, [search]); // Only depend on search — NOT updateParams
 
   const clearFilters = () => {
     setSearch("");

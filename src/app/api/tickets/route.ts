@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = ticketQuerySchema.parse(
-      Object.fromEntries(searchParams.entries())
+      Object.fromEntries(searchParams.entries()),
     );
 
     const where: Prisma.TicketWhereInput = {};
@@ -100,8 +100,6 @@ export async function POST(request: Request) {
         },
       },
     });
-
-    console.log(`[Ticket] Created ticket ${ticket.id} by user ${session.user.id}`);
 
     return NextResponse.json({ data: ticket }, { status: 201 });
   } catch (error) {

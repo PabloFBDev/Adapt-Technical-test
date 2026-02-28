@@ -38,33 +38,36 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 
 ## Decisões Técnicas
 
-| Decisão | Escolha | Motivo |
-|---------|---------|--------|
-| Framework | Next.js 14+ (App Router) | Exigido. RSC, layouts, route handlers integrados. |
-| ORM | Prisma | Type-safety, migrations versionadas, boa integração com Postgres. |
-| Banco | Supabase (Postgres) | Hosted, sem Docker, connection string simples. |
-| Auth | NextAuth (Credentials) | JWT strategy, session handling, middleware de proteção. |
-| UI | Tailwind + shadcn/ui | Componentes acessíveis, estilo clean. |
-| Validação | Zod | Schemas compartilhados front/back, type inference. |
-| Testes | Vitest | ESM nativo, rápido, integração natural com TypeScript. |
-| IA | MockAIProvider (plugável) | Interface abstrata; mock funciona sem API key. |
-| Streaming | SSE (Server-Sent Events) | Nativo do browser, sem websocket, boa DX. |
+| Decisão   | Escolha                   | Motivo                                                            |
+| --------- | ------------------------- | ----------------------------------------------------------------- |
+| Framework | Next.js 14+ (App Router)  | Exigido. RSC, layouts, route handlers integrados.                 |
+| ORM       | Prisma                    | Type-safety, migrations versionadas, boa integração com Postgres. |
+| Banco     | Supabase (Postgres)       | Hosted, sem Docker, connection string simples.                    |
+| Auth      | NextAuth (Credentials)    | JWT strategy, session handling, middleware de proteção.           |
+| UI        | Tailwind + shadcn/ui      | Componentes acessíveis, estilo clean.                             |
+| Validação | Zod                       | Schemas compartilhados front/back, type inference.                |
+| Testes    | Vitest                    | ESM nativo, rápido, integração natural com TypeScript.            |
+| IA        | MockAIProvider (plugável) | Interface abstrata; mock funciona sem API key.                    |
+| Streaming | SSE (Server-Sent Events)  | Nativo do browser, sem websocket, boa DX.                         |
 
 ---
 
 ## Diferenciais Implementados
 
 ### 1. Edição e Mudança de Status
+
 - Endpoint `PATCH /api/tickets/:id` com partial update
 - Formulário de edição pré-carregado com valores atuais
 - Mudança de status inline na página de detalhe (dropdown)
 
 ### 2. Auditoria de Mudanças
+
 - Tabela `AuditLog` com diffs por campo (`{ field: { from, to } }`)
 - Registro automático em criação e edição
 - Timeline de auditoria na página de detalhe do ticket
 
 ### 3. Streaming IA (SSE)
+
 - Endpoint retorna `text/event-stream`
 - MockAIProvider simula chunks com delay (50-100ms)
 - UI renderiza resultado progressivamente (summary, nextSteps, riskLevel, categories)
@@ -151,6 +154,7 @@ O sistema usa `MockAIProvider` automaticamente. O mock:
 Para usar um provider real, basta:
 
 1. Implementar a interface `AIProvider`:
+
 ```typescript
 export class OpenAIProvider implements AIProvider {
   async *generateSummary(input) {
@@ -162,6 +166,7 @@ export class OpenAIProvider implements AIProvider {
 2. Registrar no factory (`src/lib/ai/factory.ts`)
 
 3. Configurar no `.env`:
+
 ```
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-...
@@ -222,14 +227,14 @@ AI_CACHE_TTL_MS="3600000"  # 1 hora em ms
 
 ## Scripts Disponíveis
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia servidor de desenvolvimento |
-| `npm run build` | Build de produção |
-| `npm start` | Inicia servidor de produção |
-| `npm test` | Roda testes com Vitest |
-| `npm run test:coverage` | Testes com relatório de coverage |
-| `npm run lint` | Roda ESLint |
-| `npx prisma migrate dev` | Roda migrations |
-| `npx prisma db seed` | Popula banco com dados de exemplo |
-| `npx prisma studio` | Abre UI do Prisma para inspecionar banco |
+| Comando                  | Descrição                                |
+| ------------------------ | ---------------------------------------- |
+| `npm run dev`            | Inicia servidor de desenvolvimento       |
+| `npm run build`          | Build de produção                        |
+| `npm start`              | Inicia servidor de produção              |
+| `npm test`               | Roda testes com Vitest                   |
+| `npm run test:coverage`  | Testes com relatório de coverage         |
+| `npm run lint`           | Roda ESLint                              |
+| `npx prisma migrate dev` | Roda migrations                          |
+| `npx prisma db seed`     | Popula banco com dados de exemplo        |
+| `npx prisma studio`      | Abre UI do Prisma para inspecionar banco |

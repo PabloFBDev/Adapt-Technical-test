@@ -18,15 +18,12 @@ export function handleApiError(error: unknown): NextResponse {
   if (error instanceof ZodError) {
     return NextResponse.json(
       { error: "Validation failed", details: error.flatten().fieldErrors },
-      { status: 400 }
+      { status: 400 },
     );
   }
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  console.error("[API Error]", error);
-  return NextResponse.json(
-    { error: "Internal server error" },
-    { status: 500 }
-  );
+
+  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }

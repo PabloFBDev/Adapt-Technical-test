@@ -8,7 +8,7 @@ import { invalidateCache } from "@/lib/ai/cache";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -38,7 +38,7 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -131,10 +131,6 @@ export async function PATCH(
     if (changes.title || changes.description) {
       await invalidateCache(id);
     }
-
-    console.log(
-      `[Ticket] Updated ticket ${id} by user ${session.user.id}: ${Object.keys(changes).join(", ")}`
-    );
 
     return NextResponse.json({ data: updatedTicket });
   } catch (error) {

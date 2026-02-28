@@ -2,17 +2,17 @@
 
 ## Stack
 
-| Camada       | Tecnologia                  | Justificativa                                                              |
-|--------------|-----------------------------|----------------------------------------------------------------------------|
-| Framework    | Next.js 14+ (App Router)    | Exigido pelo teste. App Router permite RSC, layouts, route handlers.       |
-| Linguagem    | TypeScript (strict)         | Exigido. `strict: true` no tsconfig, zero `any`.                           |
-| ORM          | Prisma                      | Type-safety, migrations versionadas, boa DX com Supabase Postgres.         |
-| Banco        | Supabase (Postgres)         | Hosted, zero Docker, connection string simples. Prisma conecta via `DATABASE_URL`. |
-| Auth         | NextAuth v4 (Credentials)   | JWT strategy, session handling, CSRF, middleware de proteção de rotas.      |
-| UI           | Tailwind CSS + shadcn/ui    | Exigido. Componentes acessíveis, estilo Linear/Vercel.                     |
-| Validação    | Zod                         | Exigido. Schemas compartilhados entre front e back.                        |
-| Testes       | Vitest + React Testing Library | Rápido, ESM nativo, integração natural com Next.js e TypeScript.        |
-| IA           | MockAIProvider (plugável)   | Interface abstrata, mock como default, real como plug-in futuro.           |
+| Camada    | Tecnologia                     | Justificativa                                                                      |
+| --------- | ------------------------------ | ---------------------------------------------------------------------------------- |
+| Framework | Next.js 14+ (App Router)       | Exigido pelo teste. App Router permite RSC, layouts, route handlers.               |
+| Linguagem | TypeScript (strict)            | Exigido. `strict: true` no tsconfig, zero `any`.                                   |
+| ORM       | Prisma                         | Type-safety, migrations versionadas, boa DX com Supabase Postgres.                 |
+| Banco     | Supabase (Postgres)            | Hosted, zero Docker, connection string simples. Prisma conecta via `DATABASE_URL`. |
+| Auth      | NextAuth v4 (Credentials)      | JWT strategy, session handling, CSRF, middleware de proteção de rotas.             |
+| UI        | Tailwind CSS + shadcn/ui       | Exigido. Componentes acessíveis, estilo Linear/Vercel.                             |
+| Validação | Zod                            | Exigido. Schemas compartilhados entre front e back.                                |
+| Testes    | Vitest + React Testing Library | Rápido, ESM nativo, integração natural com Next.js e TypeScript.                   |
+| IA        | MockAIProvider (plugável)      | Interface abstrata, mock como default, real como plug-in futuro.                   |
 
 ---
 
@@ -220,7 +220,10 @@ export interface AIProvider {
 // src/lib/ai/mock-provider.ts
 
 export class MockAIProvider implements AIProvider {
-  async *generateSummary(input: { title: string; description: string }): AsyncGenerator<AIStreamChunk> {
+  async *generateSummary(input: {
+    title: string;
+    description: string;
+  }): AsyncGenerator<AIStreamChunk> {
     const result = this.buildResult(input);
 
     // Stream summary em chunks de ~10 palavras
@@ -238,7 +241,11 @@ export class MockAIProvider implements AIProvider {
 
     // riskLevel e categories de uma vez
     yield { type: "chunk", field: "riskLevel", content: result.riskLevel };
-    yield { type: "chunk", field: "categories", content: JSON.stringify(result.categories) };
+    yield {
+      type: "chunk",
+      field: "categories",
+      content: JSON.stringify(result.categories),
+    };
 
     yield { type: "done", result };
   }
@@ -290,7 +297,10 @@ export const authOptions: NextAuthOptions = {
         });
         if (!user) return null;
 
-        const isValid = await bcrypt.compare(credentials!.password, user.password);
+        const isValid = await bcrypt.compare(
+          credentials!.password,
+          user.password,
+        );
         if (!isValid) return null;
 
         return { id: user.id, email: user.email, name: user.name };
@@ -323,7 +333,7 @@ export const config = {
   matcher: [
     "/tickets/new",
     "/tickets/:path*/edit",
-    "/api/tickets/:path*",   // POST e PATCH
+    "/api/tickets/:path*", // POST e PATCH
     "/api/ai/:path*",
   ],
 };
@@ -335,7 +345,8 @@ Nota: O middleware do NextAuth protege todas as rotas no matcher. Para diferenci
 // Em route handlers que aceitam GET público + POST protegido
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   // ...
 }
 ```
@@ -346,22 +357,24 @@ export async function POST(request: Request) {
 
 ### Endpoints
 
-| Método | Rota                    | Auth     | Descrição                |
-|--------|-------------------------|----------|--------------------------|
-| GET    | /api/tickets            | Público  | Listar tickets (paginado)|
-| POST   | /api/tickets            | Protegido| Criar ticket             |
-| GET    | /api/tickets/:id        | Público  | Detalhe do ticket        |
-| PATCH  | /api/tickets/:id        | Protegido| Atualizar ticket         |
-| POST   | /api/ai/summarize       | Protegido| Gerar resumo IA (SSE)   |
+| Método | Rota              | Auth      | Descrição                 |
+| ------ | ----------------- | --------- | ------------------------- |
+| GET    | /api/tickets      | Público   | Listar tickets (paginado) |
+| POST   | /api/tickets      | Protegido | Criar ticket              |
+| GET    | /api/tickets/:id  | Público   | Detalhe do ticket         |
+| PATCH  | /api/tickets/:id  | Protegido | Atualizar ticket          |
+| POST   | /api/ai/summarize | Protegido | Gerar resumo IA (SSE)     |
 
 ### Padrão de Resposta
 
 **Sucesso:**
+
 ```json
 { "data": { ... } }
 ```
 
 **Sucesso (lista):**
+
 ```json
 {
   "data": [...],
@@ -370,6 +383,7 @@ export async function POST(request: Request) {
 ```
 
 **Erro:**
+
 ```json
 {
   "error": "Mensagem legível",
@@ -384,7 +398,10 @@ export async function POST(request: Request) {
 
 export const createTicketSchema = z.object({
   title: z.string().min(3, "Título deve ter pelo menos 3 caracteres").max(120),
-  description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres").max(5000),
+  description: z
+    .string()
+    .min(10, "Descrição deve ter pelo menos 10 caracteres")
+    .max(5000),
   priority: z.enum(["low", "medium", "high"]),
   tags: z.array(z.string().min(1).max(30)).max(10).default([]),
 });
@@ -421,13 +438,13 @@ function handleApiError(error: unknown): NextResponse {
   if (error instanceof ZodError) {
     return NextResponse.json(
       { error: "Validation failed", details: error.flatten().fieldErrors },
-      { status: 400 }
+      { status: 400 },
     );
   }
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  console.error("[API Error]", error);
+
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }
 ```
@@ -448,12 +465,14 @@ function handleApiError(error: unknown): NextResponse {
 ### O que testar
 
 **1. AIProvider (alta prioridade)**
+
 - `MockAIProvider.generateSummary()` retorna `AIResult` válido
 - Streaming emite chunks no formato correto
 - Keywords no título influenciam `riskLevel` e `categories`
 - Factory retorna `MockAIProvider` por default
 
 **2. Schemas Zod (alta prioridade)**
+
 - `createTicketSchema` aceita input válido
 - `createTicketSchema` rejeita input inválido (title curto, description vazio, priority errada)
 - `updateTicketSchema` aceita partial updates
@@ -461,6 +480,7 @@ function handleApiError(error: unknown): NextResponse {
 - `summarizeSchema` aceita `ticketId` OU `{ title, description }`
 
 **3. Route Handlers (média prioridade)**
+
 - `POST /api/tickets` cria ticket e retorna 201
 - `POST /api/tickets` retorna 400 com input inválido
 - `GET /api/tickets` retorna lista paginada

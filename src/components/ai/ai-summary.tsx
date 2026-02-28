@@ -105,8 +105,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
           }
         }
       }
-    } catch (err) {
-      console.error("AI Summary error:", err);
+    } catch {
       setLoading(false);
       setStreaming(false);
     }

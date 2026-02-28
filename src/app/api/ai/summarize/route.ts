@@ -27,7 +27,6 @@ export async function POST(request: Request) {
       // Check cache first
       const cached = await getCachedResult(ticketId);
       if (cached) {
-        console.log(`[AI] Returning cached result for ticket ${ticketId}`);
         return NextResponse.json({ data: cached, cached: true });
       }
 
@@ -55,20 +54,16 @@ export async function POST(request: Request) {
 
           for await (const chunk of generator) {
             const data = JSON.stringify(chunk);
-            controller.enqueue(
-              encoder.encode(`data: ${data}\n\n`)
-            );
+            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
 
             // If this is the done event, cache the result
             if (chunk.type === "done" && ticketId) {
               await setCachedResult(ticketId, chunk.result);
-              console.log(`[AI] Cached result for ticket ${ticketId}`);
             }
           }
 
           controller.close();
-        } catch (error) {
-          console.error("[AI] Streaming error:", error);
+        } catch {
           const errorData = JSON.stringify({
             type: "error",
             message: "Failed to generate summary",
