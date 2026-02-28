@@ -4,19 +4,21 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Limpar base de dados (ordem respeita foreign keys)
+  await prisma.aICache.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.ticket.deleteMany();
+  await prisma.user.deleteMany();
+
   const hashedPassword = await bcrypt.hash("password123", 10);
 
-  const user = await prisma.user.upsert({
-    where: { email: "admin@opscopilot.com" },
-    update: {},
-    create: {
+  const user = await prisma.user.create({
+    data: {
       email: "admin@opscopilot.com",
       password: hashedPassword,
       name: "Admin",
     },
   });
-
-  console.log("Seeded user:", user.email);
 
   const ticketsData = [
     {
@@ -83,19 +85,14 @@ async function main() {
         },
       },
     });
-
-    console.log("Seeded ticket:", ticket.title);
   }
-
-  console.log("Seed completed successfully!");
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
-    console.error(e);
+  .catch(async () => {
     await prisma.$disconnect();
     process.exit(1);
   });
