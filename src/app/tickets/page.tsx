@@ -9,16 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TicketsPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
-          <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mt-1">
+          <p className="font-mono text-[11px] text-primary/80 uppercase tracking-widest mb-1.5">
             painel de incidentes
           </p>
+          <h1 className="text-3xl font-bold tracking-tight">Tickets</h1>
         </div>
         <Link href="/tickets/new">
-          <Button className="gap-2">
+          <Button className="gap-2 rounded-lg shadow-lg shadow-primary/15 hover:shadow-primary/25 transition-shadow">
             <Plus className="h-4 w-4" />
             Novo Ticket
           </Button>
@@ -27,7 +27,7 @@ export default function TicketsPage() {
 
       <TicketStats />
 
-      <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+      <Suspense fallback={<Skeleton className="h-10 w-full rounded-xl" />}>
         <TicketFilters />
       </Suspense>
 
@@ -35,7 +35,7 @@ export default function TicketsPage() {
         fallback={
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
             ))}
           </div>
         }

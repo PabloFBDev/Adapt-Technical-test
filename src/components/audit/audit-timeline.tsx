@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { History } from "lucide-react";
 import type { AuditLogWithUser } from "@/types";
 
 const actionLabels = {
@@ -51,12 +52,17 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Historico de Mudancas</CardTitle>
+        <div className="flex items-center gap-2.5">
+          <div className="h-6 w-6 rounded-lg bg-primary/8 flex items-center justify-center">
+            <History className="h-3.5 w-3.5 text-primary/70" />
+          </div>
+          <CardTitle className="text-lg font-bold">Historico de Mudancas</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="relative space-y-6">
           {/* Vertical timeline line */}
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-border/60 via-border/30 to-transparent" />
 
           {auditLogs.map((log, index) => {
             const changes = log.changes as Record<
@@ -71,39 +77,39 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
               <div
                 key={log.id}
                 className={cn(
-                  "relative pl-7 animate-fade-in-up group/entry",
+                  "relative pl-8 animate-fade-in-up group/entry",
                   staggerClass
                 )}
               >
                 {/* Colored dot */}
                 <div className={cn(
-                  "absolute left-0 top-1 h-[15px] w-[15px] rounded-full border-2 border-background ring-2 ring-transparent transition-all duration-200 group-hover/entry:ring-current/20",
+                  "absolute left-0 top-1 h-[15px] w-[15px] rounded-full border-2 border-background ring-2 ring-transparent transition-all duration-300 group-hover/entry:ring-current/15",
                   dotColor
                 )} />
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-medium">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-semibold">
                       {actionLabels[action] || log.action}
                     </span>
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="font-mono text-[11px] text-muted-foreground/70">
                       {log.user.name || log.user.email}
                     </span>
-                    <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                    <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums">
                       {new Date(log.createdAt).toLocaleString("pt-BR")}
                     </span>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 pl-0.5">
                     {Object.entries(changes).map(([field, change]) => (
-                      <div key={field} className="text-sm">
-                        <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                      <div key={field} className="text-sm flex items-baseline gap-1.5">
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 shrink-0">
                           {fieldLabels[field] || field}:
-                        </span>{" "}
-                        <span className="text-muted-foreground line-through decoration-muted-foreground/40">
+                        </span>
+                        <span className="text-muted-foreground/50 line-through decoration-muted-foreground/30">
                           {formatValue(field, change.from)}
                         </span>
-                        <span className="text-muted-foreground/40 mx-1">&#8594;</span>
-                        <span>{formatValue(field, change.to)}</span>
+                        <span className="text-muted-foreground/30">&#8594;</span>
+                        <span className="font-medium">{formatValue(field, change.to)}</span>
                       </div>
                     ))}
                   </div>

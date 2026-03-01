@@ -120,32 +120,32 @@ export default function SettingsPage() {
         <Breadcrumbs items={[{ label: "Configurações" }]} />
 
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2.5">
+          <div className="rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 p-3">
             <Settings className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Configurações de IA
-            </h1>
-            <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mt-0.5">
+            <p className="font-mono text-[10px] text-primary/70 uppercase tracking-widest mb-0.5">
               providers & modelos
             </p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Configuracoes de IA
+            </h1>
           </div>
         </div>
 
-        <Card className="relative max-w-4xl shadow-lg shadow-primary/5 animate-fade-in-up glass has-[:focus-visible]:border-primary/30 has-[:focus-visible]:shadow-primary/10 transition-all duration-300">
-          {/* Top accent line */}
-          <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <Card className="relative max-w-4xl shadow-xl shadow-primary/5 animate-fade-in-up glass-premium border-border/40 has-[:focus-visible]:border-primary/25 has-[:focus-visible]:shadow-primary/10 transition-all duration-500">
+          {/* Top accent gradient */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent rounded-t-xl" />
 
           <CardContent className="pt-8 pb-8">
             <div className="space-y-6">
               {/* Default Provider */}
               <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                <Label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                   Provider padrão
                 </Label>
                 <div className="relative">
-                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 z-10 pointer-events-none" />
+                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 z-10 pointer-events-none" />
                   <Select
                     value={config.defaultProvider}
                     onValueChange={(v) => updateField("defaultProvider", v)}
@@ -165,21 +165,21 @@ export default function SettingsPage() {
               </div>
 
               {/* OpenAI */}
-              <div className="space-y-4 rounded-lg border border-border/50 p-4">
-                <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">OpenAI</h2>
+              <div className="space-y-4 rounded-xl border border-border/30 p-5">
+                <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">OpenAI</h2>
                 <div className="space-y-2">
-                  <Label htmlFor="openaiApiKey" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="openaiApiKey" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     API Key
                   </Label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="openaiApiKey"
                       type={showKeys.openai && isKeyEdited("openaiApiKey") ? "text" : "password"}
                       value={config.openaiApiKey || ""}
                       onChange={(e) => updateField("openaiApiKey", e.target.value)}
                       placeholder="sk-..."
-                      className="pl-10 h-11 pr-10"
+                      className="pl-10 h-11 pr-10 rounded-lg"
                     />
                     <Button
                       type="button"
@@ -198,31 +198,31 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="openaiModel" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="openaiModel" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     Modelo
                   </Label>
                   <div className="relative">
-                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="openaiModel"
                       value={config.openaiModel}
                       onChange={(e) => updateField("openaiModel", e.target.value)}
                       placeholder="gpt-4o-mini"
-                      className="pl-10 h-11"
+                      className="pl-10 h-11 rounded-lg"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Anthropic */}
-              <div className="space-y-4 rounded-lg border border-border/50 p-4">
-                <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Anthropic</h2>
+              <div className="space-y-4 rounded-xl border border-border/30 p-5">
+                <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">Anthropic</h2>
                 <div className="space-y-2">
-                  <Label htmlFor="anthropicApiKey" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="anthropicApiKey" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     API Key
                   </Label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="anthropicApiKey"
                       type={showKeys.anthropic && isKeyEdited("anthropicApiKey") ? "text" : "password"}
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                         updateField("anthropicApiKey", e.target.value)
                       }
                       placeholder="sk-ant-..."
-                      className="pl-10 h-11 pr-10"
+                      className="pl-10 h-11 pr-10 rounded-lg"
                     />
                     <Button
                       type="button"
@@ -250,38 +250,38 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="anthropicModel" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="anthropicModel" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     Modelo
                   </Label>
                   <div className="relative">
-                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="anthropicModel"
                       value={config.anthropicModel}
                       onChange={(e) => updateField("anthropicModel", e.target.value)}
                       placeholder="claude-haiku-4-5-20251001"
-                      className="pl-10 h-11"
+                      className="pl-10 h-11 rounded-lg"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Gemini */}
-              <div className="space-y-4 rounded-lg border border-border/50 p-4">
-                <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Google Gemini</h2>
+              <div className="space-y-4 rounded-xl border border-border/30 p-5">
+                <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">Google Gemini</h2>
                 <div className="space-y-2">
-                  <Label htmlFor="geminiApiKey" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="geminiApiKey" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     API Key
                   </Label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="geminiApiKey"
                       type={showKeys.gemini && isKeyEdited("geminiApiKey") ? "text" : "password"}
                       value={config.geminiApiKey || ""}
                       onChange={(e) => updateField("geminiApiKey", e.target.value)}
                       placeholder="AIza..."
-                      className="pl-10 h-11 pr-10"
+                      className="pl-10 h-11 pr-10 rounded-lg"
                     />
                     <Button
                       type="button"
@@ -300,17 +300,17 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="geminiModel" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="geminiModel" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                     Modelo
                   </Label>
                   <div className="relative">
-                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                     <Input
                       id="geminiModel"
                       value={config.geminiModel}
                       onChange={(e) => updateField("geminiModel", e.target.value)}
                       placeholder="gemini-2.0-flash"
-                      className="pl-10 h-11"
+                      className="pl-10 h-11 rounded-lg"
                     />
                   </div>
                 </div>
@@ -318,11 +318,11 @@ export default function SettingsPage() {
 
               {/* Cache TTL */}
               <div className="space-y-2">
-                <Label htmlFor="cacheTtlMs" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                <Label htmlFor="cacheTtlMs" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
                   Cache TTL (ms)
                 </Label>
                 <div className="relative">
-                  <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                  <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
                   <Input
                     id="cacheTtlMs"
                     type="number"
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                       updateField("cacheTtlMs", parseInt(e.target.value, 10) || 0)
                     }
                     placeholder="3600000"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 rounded-lg"
                   />
                 </div>
                 <p className="font-mono text-[11px] text-muted-foreground">
@@ -343,19 +343,19 @@ export default function SettingsPage() {
               </div>
 
               {/* Save */}
-              <div className="pt-6 border-t border-border/50 flex gap-3">
-                <Button onClick={handleSave} disabled={saving} className="gap-2">
+              <div className="pt-6 border-t border-border/30 flex gap-3">
+                <Button onClick={handleSave} disabled={saving} className="gap-2 rounded-lg shadow-lg shadow-primary/15 hover:shadow-primary/25 transition-all">
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  Salvar configurações
+                  Salvar configuracoes
                 </Button>
                 <Button
                   asChild
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 rounded-lg"
                 >
                   <Link href="/tickets">
                     <ArrowLeft className="h-4 w-4" />

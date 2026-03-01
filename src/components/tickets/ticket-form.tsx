@@ -94,24 +94,24 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
   };
 
   return (
-    <Card className="relative max-w-2xl shadow-lg shadow-primary/5 animate-fade-in-up glass has-[:focus-visible]:border-primary/30 has-[:focus-visible]:shadow-primary/10 transition-all duration-300">
-      {/* Top accent line */}
-      <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+    <Card className="relative max-w-2xl shadow-xl shadow-primary/5 animate-fade-in-up glass-premium border-border/40 has-[:focus-visible]:border-primary/25 has-[:focus-visible]:shadow-primary/10 transition-all duration-500">
+      {/* Top accent gradient */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent rounded-t-xl" />
 
       <CardContent className="pt-8 pb-8">
         {/* Progress indicator */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="font-mono text-[10px] text-muted-foreground/60 uppercase tracking-widest">
               Progresso
             </span>
-            <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
+            <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums">
               {filledFields}/{REQUIRED_FIELDS} campos
             </span>
           </div>
-          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-1 w-full bg-muted/50 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-primary/70 to-primary rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -120,22 +120,22 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="title" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               Titulo
             </Label>
-            <div className="relative">
-              <Type className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <Type className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Titulo do ticket"
-                className="pl-10 h-11"
+                className="pl-10 h-11 rounded-lg"
                 aria-invalid={!!errors.title}
               />
             </div>
             {errors.title && (
-              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+              <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                 <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                 {errors.title[0]}
               </p>
@@ -144,28 +144,28 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="description" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               Descricao
             </Label>
-            <div className="relative">
-              <AlignLeft className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <AlignLeft className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descreva o ticket em detalhes..."
                 rows={6}
-                className="pl-10 transition-shadow duration-200"
+                className="pl-10 transition-shadow duration-200 rounded-lg"
               />
             </div>
             <div className="flex justify-between">
               {errors.description ? (
-                <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+                <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                   <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                   {errors.description[0]}
                 </p>
               ) : <span />}
-              <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
+              <span className="font-mono text-[10px] text-muted-foreground/50 tabular-nums">
                 {description.length}
               </span>
             </div>
@@ -173,13 +173,13 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               Prioridade
             </Label>
             <div className="relative">
-              <Signal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 z-10 pointer-events-none" />
+              <Signal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 z-10 pointer-events-none" />
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-11 pl-10">
+                <SelectTrigger className="h-11 pl-10 rounded-lg">
                   <SelectValue placeholder="Selecione a prioridade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,7 +190,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
               </Select>
             </div>
             {errors.priority && (
-              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+              <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                 <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                 {errors.priority[0]}
               </p>
@@ -199,7 +199,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label className="font-mono text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
               <Tags className="h-3.5 w-3.5" />
               Tags
             </Label>
@@ -207,8 +207,8 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-6 border-t border-border/50">
-            <Button type="submit" disabled={loading} className="gap-2">
+          <div className="flex gap-3 pt-6 border-t border-border/30">
+            <Button type="submit" disabled={loading} className="gap-2 rounded-lg shadow-lg shadow-primary/15 hover:shadow-primary/25 transition-all">
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -230,7 +230,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="gap-2"
+              className="gap-2 rounded-lg"
             >
               <ArrowLeft className="h-4 w-4" />
               Cancelar

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,7 +81,7 @@ export function RegisterForm() {
       });
 
       if (result?.error) {
-        setError("Conta criada, mas falha no login automático. Tente fazer login.");
+        setError("Conta criada, mas falha no login automatico. Tente fazer login.");
         setLoading(false);
         return;
       }
@@ -89,23 +89,26 @@ export function RegisterForm() {
       router.push("/tickets");
       router.refresh();
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError("Erro de conexao. Tente novamente.");
       setLoading(false);
     }
   };
 
   return (
-    <Card className="relative w-full max-w-md mx-auto shadow-2xl shadow-primary/10 animate-fade-in-up bg-white has-[:focus-visible]:border-primary/30 has-[:focus-visible]:shadow-primary/15 transition-all duration-300">
-      {/* Top accent line */}
-      <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+    <Card className="relative w-full max-w-md mx-auto shadow-2xl shadow-primary/8 animate-fade-in-up glass-premium border-border/40 has-[:focus-visible]:border-primary/25 has-[:focus-visible]:shadow-primary/12 transition-all duration-500">
+      {/* Top accent gradient */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent rounded-t-xl" />
 
-      <CardHeader className="text-center pb-2 pt-8">
-        <div className="font-mono text-3xl mb-1 animate-brand-glow">
+      <CardHeader className="text-center pb-2 pt-10">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
+          <Zap className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div className="font-mono text-2xl mb-1">
           <span className="font-black">Ops</span>
-          <span className="text-muted-foreground/60">/</span>
+          <span className="text-muted-foreground/40 mx-0.5">/</span>
           <span className="font-black">Copilot</span>
         </div>
-        <CardDescription className="font-mono text-xs uppercase tracking-wider mt-1">
+        <CardDescription className="font-mono text-[11px] uppercase tracking-widest mt-1.5 text-muted-foreground/70">
           criar conta
         </CardDescription>
       </CardHeader>
@@ -113,28 +116,28 @@ export function RegisterForm() {
       <CardContent className="pt-8 pb-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-              Nome <span className="text-muted-foreground/50">(opcional)</span>
+            <Label htmlFor="name" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
+              Nome <span className="text-muted-foreground/40">(opcional)</span>
             </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Input
                 id="name"
                 type="text"
                 placeholder="Seu nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="pl-10 h-11"
+                className="pl-10 h-11 rounded-lg"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="email" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               E-mail
             </Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Input
                 id="email"
                 type="email"
@@ -142,12 +145,12 @@ export function RegisterForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                className="pl-10 h-11"
+                className="pl-10 h-11 rounded-lg"
                 aria-invalid={!!emailError}
               />
             </div>
             {emailError && (
-              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+              <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                 <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                 {emailError}
               </p>
@@ -155,11 +158,11 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="password" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               Senha
             </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Input
                 id="password"
                 type="password"
@@ -167,12 +170,12 @@ export function RegisterForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                className="pl-10 h-11"
+                className="pl-10 h-11 rounded-lg"
                 aria-invalid={!!passwordError}
               />
             </div>
             {passwordError && (
-              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+              <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                 <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                 {passwordError}
               </p>
@@ -180,11 +183,11 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="confirmPassword" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
               Confirmar Senha
             </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
               <Input
                 id="confirmPassword"
                 type="password"
@@ -192,12 +195,12 @@ export function RegisterForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
-                className="pl-10 h-11"
+                className="pl-10 h-11 rounded-lg"
                 aria-invalid={!!confirmPasswordError}
               />
             </div>
             {confirmPasswordError && (
-              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+              <p className="font-mono text-[11px] text-destructive flex items-center gap-1.5 animate-scale-in">
                 <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
                 {confirmPasswordError}
               </p>
@@ -213,7 +216,7 @@ export function RegisterForm() {
 
           <Button
             type="submit"
-            className="w-full h-11 gap-2 text-sm font-medium"
+            className="w-full h-11 gap-2 text-sm font-medium rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
             disabled={loading}
           >
             {loading ? (
@@ -235,7 +238,7 @@ export function RegisterForm() {
               variant="ghost"
               className="w-full font-mono text-xs text-muted-foreground hover:text-foreground"
             >
-              Já tem conta? Entrar
+              Ja tem conta? <span className="text-primary ml-1">Entrar</span>
             </Button>
           </Link>
         </form>

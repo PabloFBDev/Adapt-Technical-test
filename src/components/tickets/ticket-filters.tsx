@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -70,22 +70,22 @@ export function TicketFilters() {
   const hasFilters = activeFilterCount > 0;
 
   return (
-    <div className="p-4 rounded-lg glass border border-border/50">
+    <div className="p-4 rounded-xl glass border border-border/40 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative sm:max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative sm:max-w-md w-full group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
             placeholder="Buscar tickets..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 rounded-lg"
           />
         </div>
         <Select
           value={searchParams.get("status") || "all"}
           onValueChange={(v) => updateParams("status", v)}
         >
-          <SelectTrigger className="sm:w-50 font-mono text-sm">
+          <SelectTrigger className="sm:w-50 font-mono text-sm rounded-lg">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +99,7 @@ export function TicketFilters() {
           value={searchParams.get("priority") || "all"}
           onValueChange={(v) => updateParams("priority", v)}
         >
-          <SelectTrigger className="sm:w-50 font-mono text-sm">
+          <SelectTrigger className="sm:w-50 font-mono text-sm rounded-lg">
             <SelectValue placeholder="Prioridade" />
           </SelectTrigger>
           <SelectContent>
@@ -110,9 +110,10 @@ export function TicketFilters() {
           </SelectContent>
         </Select>
         {hasFilters && (
-          <Button variant="ghost" onClick={clearFilters} className="sm:w-auto animate-scale-in font-mono text-xs gap-1">
-            Limpar filtros
-            <Badge variant="secondary" className="font-mono text-[10px] h-4 min-w-4 px-1">
+          <Button variant="ghost" onClick={clearFilters} className="sm:w-auto animate-scale-in font-mono text-xs gap-1.5 rounded-lg">
+            <X className="h-3 w-3" />
+            Limpar
+            <Badge variant="secondary" className="font-mono text-[10px] h-4 min-w-4 px-1 rounded-full">
               {activeFilterCount}
             </Badge>
           </Button>

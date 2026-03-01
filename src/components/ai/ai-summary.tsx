@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +30,9 @@ interface AISummaryProps {
 }
 
 const riskColors = {
-  low: "bg-status-done/15 text-status-done border-status-done/30",
-  medium: "bg-priority-medium/15 text-priority-medium border-priority-medium/30",
-  high: "bg-priority-high/15 text-priority-high border-priority-high/30 animate-glow-pulse",
+  low: "bg-status-done/10 text-status-done border-status-done/25",
+  medium: "bg-priority-medium/10 text-priority-medium border-priority-medium/25",
+  high: "bg-priority-high/10 text-priority-high border-priority-high/25 animate-glow-pulse",
 };
 
 export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
@@ -155,22 +155,22 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
   if (!result && !streaming) {
     return (
       <Card className={cn(
-        "border-dashed bg-ai/[0.02]",
-        error ? "border-destructive/30" : "border-ai/30"
+        "border-dashed bg-ai/[0.02] hover-lift",
+        error ? "border-destructive/30" : "border-ai/25"
       )}>
-        <CardContent className="flex flex-col items-center py-8">
+        <CardContent className="flex flex-col items-center py-10">
           <div className={cn(
-            "rounded-full p-4 mb-3",
-            error ? "bg-destructive/10" : "bg-ai/10 animate-subtle-float"
+            "rounded-2xl p-4 mb-4",
+            error ? "bg-destructive/10" : "bg-gradient-to-br from-ai/15 to-ai/5 animate-subtle-float"
           )}>
             <Sparkles className={cn("h-6 w-6", error ? "text-destructive" : "text-ai")} />
           </div>
           {error ? (
-            <p className="text-sm font-medium text-destructive mb-4">{error}</p>
+            <p className="text-sm font-medium text-destructive mb-5">{error}</p>
           ) : (
             <>
-              <p className="text-sm font-medium mb-1">Analise com IA</p>
-              <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
+              <p className="text-sm font-semibold mb-1">Analise com IA</p>
+              <p className="text-xs text-muted-foreground/70 mb-5 text-center max-w-xs leading-relaxed">
                 Gere um resumo inteligente com sugestoes de proximos passos
               </p>
             </>
@@ -178,7 +178,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
           <div className="flex items-center gap-2">
             {providers.length > 1 && (
               <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                <SelectTrigger className="w-[160px] h-9">
+                <SelectTrigger className="w-[160px] h-9 rounded-lg">
                   <SelectValue placeholder="Provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,7 +190,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
                 </SelectContent>
               </Select>
             )}
-            <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white gap-2">
+            <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white gap-2 rounded-lg shadow-lg shadow-ai/20 hover:shadow-ai/30 transition-all">
               <Sparkles className="h-4 w-4" />
               Gerar Resumo
             </Button>
@@ -206,8 +206,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
 
   return (
     <Card className={cn(
-      "border-ai/30 bg-ai/[0.02] glass",
-      streaming && "relative overflow-hidden"
+      "border-ai/25 bg-ai/[0.02] glass relative overflow-hidden",
     )}>
       {streaming && (
         <div
@@ -219,25 +218,34 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
         />
       )}
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-ai" />
-            <CardTitle className="text-lg">Resumo IA</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-ai/20 to-ai/5 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 text-ai" />
+              </div>
+              <CardTitle className="text-lg font-bold">Resumo IA</CardTitle>
+              {streaming && (
+                <Badge variant="secondary" className="animate-pulse font-mono text-[10px] rounded-full">
+                  Gerando...
+                </Badge>
+              )}
+            </div>
             {isCached && cachedAt && (
-              <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums hidden sm:inline">
                 {cachedAt.toLocaleString("pt-BR")}
               </span>
             )}
-            {streaming && (
-              <Badge variant="secondary" className="animate-pulse font-mono text-[11px]">
-                Gerando...
-              </Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isCached && cachedAt && (
+              <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums sm:hidden">
+                {cachedAt.toLocaleString("pt-BR")}
+              </span>
             )}
             {providers.length > 1 && (
               <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectTrigger className="w-[140px] h-8 text-xs rounded-lg">
                   <SelectValue placeholder="Provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,34 +257,35 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
                 </SelectContent>
               </Select>
             )}
-            <Button variant="outline" size="sm" onClick={generateSummary}>
-              Regenerar
+            <Button variant="outline" size="sm" onClick={generateSummary} className="gap-1.5 rounded-lg">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Gerar
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {showSummary && (
           <div>
-            <h4 className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            <h4 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-2">
               Resumo
             </h4>
-            <p className="text-sm text-muted-foreground">{showSummary}</p>
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">{showSummary}</p>
           </div>
         )}
 
         {showSteps.length > 0 && (
           <div>
-            <h4 className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            <h4 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-3">
               Proximos Passos
             </h4>
-            <ol className="space-y-1">
+            <ol className="space-y-2">
               {showSteps.map((step, i) => (
-                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="font-mono text-ai shrink-0 bg-ai/10 rounded-full h-5 w-5 flex items-center justify-center text-[11px] mt-0.5">
+                <li key={i} className="text-sm text-muted-foreground/80 flex items-start gap-2.5">
+                  <span className="font-mono text-ai shrink-0 bg-ai/10 rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold mt-0.5">
                     {i + 1}
                   </span>
-                  {step}
+                  <span className="leading-relaxed">{step}</span>
                 </li>
               ))}
             </ol>
@@ -284,14 +293,14 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
         )}
 
         {displayResult && (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-border/30">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
                 Risco:
               </span>
               <Badge
                 variant="outline"
-                className={cn("font-mono text-[11px]", riskColors[displayResult.riskLevel])}
+                className={cn("font-mono text-[10px] rounded-full", riskColors[displayResult.riskLevel])}
                 style={displayResult.riskLevel === "high" ? { "--glow-color": "var(--priority-high)" } as React.CSSProperties : undefined}
               >
                 {displayResult.riskLevel === "low"
@@ -301,12 +310,12 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
                     : "Alto"}
               </Badge>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground mr-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 mr-1">
                 Categorias:
               </span>
               {displayResult.categories.map((cat) => (
-                <Badge key={cat} variant="outline" className="font-mono text-[11px]">
+                <Badge key={cat} variant="outline" className="font-mono text-[10px] rounded-full">
                   {cat}
                 </Badge>
               ))}

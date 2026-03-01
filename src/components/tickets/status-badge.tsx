@@ -4,17 +4,17 @@ import { cn } from "@/lib/utils";
 const statusConfig = {
   open: {
     label: "Aberto",
-    className: "bg-status-open/15 text-status-open border-status-open/30",
+    className: "bg-status-open/10 text-status-open border-status-open/25 shadow-status-open/5",
     glow: true,
   },
   in_progress: {
     label: "Em Progresso",
-    className: "bg-status-progress/15 text-status-progress border-status-progress/30",
+    className: "bg-status-progress/10 text-status-progress border-status-progress/25 shadow-status-progress/5",
     glow: true,
   },
   done: {
     label: "Concluido",
-    className: "bg-status-done/15 text-status-done border-status-done/30",
+    className: "bg-status-done/10 text-status-done border-status-done/25",
     glow: false,
   },
 } as const;
@@ -25,7 +25,7 @@ export function StatusBadge({ status }: { status: keyof typeof statusConfig }) {
     <Badge
       variant="outline"
       className={cn(
-        "font-mono text-[11px] tracking-wide gap-1.5",
+        "font-mono text-[10px] tracking-wider gap-1.5 rounded-full px-2.5 shadow-sm",
         config.className,
         config.glow && "animate-glow-pulse"
       )}

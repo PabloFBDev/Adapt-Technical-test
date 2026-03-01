@@ -15,7 +15,8 @@
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
       "Bash(xargs grep:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(gh api:*)"
     ]
   }
 }

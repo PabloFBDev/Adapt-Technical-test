@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Inbox, AlertTriangle, Plus } from "lucide-react";
+import { Inbox, AlertTriangle, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { TicketCard } from "./ticket-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export function TicketList() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          <Skeleton key={i} className="h-32 w-full rounded-xl" />
         ))}
       </div>
     );
@@ -48,31 +48,33 @@ export function TicketList() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
-        <div className="rounded-full bg-destructive/10 p-6 mb-4">
-          <AlertTriangle className="h-10 w-10 text-destructive/50" />
+      <div className="flex flex-col items-center justify-center py-20 animate-fade-in-up">
+        <div className="rounded-2xl bg-destructive/10 p-6 mb-5">
+          <AlertTriangle className="h-10 w-10 text-destructive/60" />
         </div>
-        <p className="text-lg font-medium mb-1">Erro ao carregar</p>
+        <p className="text-lg font-semibold mb-1">Erro ao carregar</p>
         <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
           {error}
         </p>
-        <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+        <Button onClick={() => window.location.reload()} className="rounded-lg">
+          Tentar novamente
+        </Button>
       </div>
     );
   }
 
   if (!data || data.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
-        <div className="rounded-full bg-muted p-6 mb-4">
-          <Inbox className="h-10 w-10 text-muted-foreground/50" />
+      <div className="flex flex-col items-center justify-center py-20 animate-fade-in-up">
+        <div className="rounded-2xl bg-muted p-6 mb-5">
+          <Inbox className="h-10 w-10 text-muted-foreground/40" />
         </div>
-        <p className="text-lg font-medium mb-1">Nenhum ticket encontrado</p>
+        <p className="text-lg font-semibold mb-1">Nenhum ticket encontrado</p>
         <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
           Tente ajustar os filtros ou crie um novo ticket para comecar.
         </p>
         <Link href="/tickets/new">
-          <Button className="gap-2">
+          <Button className="gap-2 rounded-lg shadow-lg shadow-primary/15">
             <Plus className="h-4 w-4" />
             Novo Ticket
           </Button>
@@ -98,27 +100,38 @@ export function TicketList() {
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4 border-t border-border/50">
+        <div className="flex items-center justify-center gap-3 pt-6 border-t border-border/30">
           <Button
             variant="outline"
             size="sm"
             onClick={() => goToPage(pagination.page - 1)}
             disabled={pagination.page <= 1}
-            className="font-mono"
+            className="font-mono rounded-lg gap-1"
           >
-            &larr; Anterior
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Anterior
           </Button>
-          <span className="font-mono text-sm text-muted-foreground tabular-nums">
-            {pagination.page} / {pagination.totalPages} ({pagination.total})
-          </span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              {pagination.page}
+            </span>
+            <span className="text-muted-foreground/30">/</span>
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              {pagination.totalPages}
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground/50 ml-1">
+              ({pagination.total})
+            </span>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => goToPage(pagination.page + 1)}
             disabled={pagination.page >= pagination.totalPages}
-            className="font-mono"
+            className="font-mono rounded-lg gap-1"
           >
-            Proxima &rarr;
+            Proxima
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}

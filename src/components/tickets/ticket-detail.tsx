@@ -19,6 +19,7 @@ import { StatusBadge } from "./status-badge";
 import { PriorityBadge } from "./priority-badge";
 import { AISummary } from "@/components/ai/ai-summary";
 import { AuditTimeline } from "@/components/audit/audit-timeline";
+import { Pencil, User, Calendar, RefreshCw } from "lucide-react";
 import type { TicketWithRelations } from "@/types";
 import type { TicketStatus } from "@prisma/client";
 
@@ -54,14 +55,19 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Card className="border-l-[3px] border-l-primary">
+      <Card className="relative border-l-[3px] border-l-primary overflow-hidden">
+        {/* Subtle gradient accent */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/[0.02] to-transparent pointer-events-none" />
+
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className="font-mono text-xs text-muted-foreground">
+            <div className="min-w-0">
+              <span className="font-mono text-[10px] text-muted-foreground/60 tracking-widest uppercase">
                 #{ticket.id.slice(0, 8)}
               </span>
-              <CardTitle className="text-xl">{ticket.title}</CardTitle>
+              <CardTitle className="text-xl font-bold tracking-tight mt-0.5">
+                {ticket.title}
+              </CardTitle>
             </div>
             <div className="flex gap-2 shrink-0">
               <StatusBadge status={status} />
@@ -69,56 +75,73 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground whitespace-pre-wrap">
+        <CardContent className="space-y-5">
+          <p className="text-muted-foreground/80 whitespace-pre-wrap leading-relaxed">
             {ticket.description}
           </p>
 
-          <div className="flex flex-wrap gap-1">
-            {ticket.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="font-mono text-[11px]">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm p-4 rounded-lg bg-muted/30">
-            <div>
-              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
-                Criado por
-              </span>
-              <span>{ticket.user.name || ticket.user.email}</span>
+          {ticket.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ticket.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="font-mono text-[10px] px-2.5 py-0.5 rounded-full">
+                  {tag}
+                </Badge>
+              ))}
             </div>
-            <div>
-              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
-                Criado em
-              </span>
-              <span className="font-mono tabular-nums">
-                {new Date(ticket.createdAt).toLocaleString("pt-BR")}
-              </span>
+          )}
+
+          <Separator className="bg-border/40" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm p-5 rounded-xl bg-muted/20 border border-border/30">
+            <div className="flex items-start gap-2.5">
+              <div className="rounded-lg bg-primary/8 p-2 mt-0.5">
+                <User className="h-3.5 w-3.5 text-primary/70" />
+              </div>
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-0.5">
+                  Criado por
+                </span>
+                <span className="text-sm font-medium">{ticket.user.name || ticket.user.email}</span>
+              </div>
             </div>
-            <div>
-              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground block mb-1">
-                Atualizado em
-              </span>
-              <span className="font-mono tabular-nums">
-                {new Date(ticket.updatedAt).toLocaleString("pt-BR")}
-              </span>
+            <div className="flex items-start gap-2.5">
+              <div className="rounded-lg bg-primary/8 p-2 mt-0.5">
+                <Calendar className="h-3.5 w-3.5 text-primary/70" />
+              </div>
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-0.5">
+                  Criado em
+                </span>
+                <span className="font-mono text-sm tabular-nums">
+                  {new Date(ticket.createdAt).toLocaleString("pt-BR")}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <div className="rounded-lg bg-primary/8 p-2 mt-0.5">
+                <RefreshCw className="h-3.5 w-3.5 text-primary/70" />
+              </div>
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-0.5">
+                  Atualizado em
+                </span>
+                <span className="font-mono text-sm tabular-nums">
+                  {new Date(ticket.updatedAt).toLocaleString("pt-BR")}
+                </span>
+              </div>
             </div>
           </div>
 
           {isAuthenticated && (
             <>
-              <Separator />
+              <Separator className="bg-border/40" />
               <div className="flex items-center gap-3">
                 <Select
                   value={status}
                   onValueChange={handleStatusChange}
                   disabled={changingStatus}
                 >
-                  <SelectTrigger className="w-40 font-mono text-sm">
+                  <SelectTrigger className="w-44 font-mono text-sm rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -129,7 +152,8 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
                 </Select>
 
                 <Link href={`/tickets/${ticket.id}/edit`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="gap-1.5 rounded-lg">
+                    <Pencil className="h-3.5 w-3.5" />
                     Editar
                   </Button>
                 </Link>
