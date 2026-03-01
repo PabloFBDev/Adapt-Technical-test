@@ -147,7 +147,7 @@ export function TicketDetail({ ticket, isAuthenticated }: TicketDetailProps) {
                   <SelectContent>
                     <SelectItem value="open">Aberto</SelectItem>
                     <SelectItem value="in_progress">Em Progresso</SelectItem>
-                    <SelectItem value="done">Concluido</SelectItem>
+                    <SelectItem value="done">Concluído</SelectItem>
                   </SelectContent>
                 </Select>
 

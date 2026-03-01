@@ -121,7 +121,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
-              Titulo
+              Título
             </Label>
             <div className="relative group">
               <Type className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
@@ -129,7 +129,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Titulo do ticket"
+                placeholder="Título do ticket"
                 className="pl-10 h-11 rounded-lg"
                 aria-invalid={!!errors.title}
               />
@@ -145,7 +145,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
-              Descricao
+              Descrição
             </Label>
             <div className="relative group">
               <AlignLeft className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
@@ -184,7 +184,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Media</SelectItem>
+                  <SelectItem value="medium">Média</SelectItem>
                   <SelectItem value="high">Alta</SelectItem>
                 </SelectContent>
               </Select>
@@ -222,7 +222,7 @@ export function TicketForm({ ticket, mode }: TicketFormProps) {
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  Salvar Alteracoes
+                  Salvar Alterações
                 </>
               )}
             </Button>

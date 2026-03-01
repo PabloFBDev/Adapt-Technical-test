@@ -16,8 +16,8 @@ const actionDotColors = {
 } as const;
 
 const fieldLabels: Record<string, string> = {
-  title: "Titulo",
-  description: "Descricao",
+  title: "Título",
+  description: "Descrição",
   priority: "Prioridade",
   status: "Status",
   tags: "Tags",
@@ -26,12 +26,12 @@ const fieldLabels: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   open: "Aberto",
   in_progress: "Em Progresso",
-  done: "Concluido",
+  done: "Concluído",
 };
 
 const priorityLabels: Record<string, string> = {
   low: "Baixa",
-  medium: "Media",
+  medium: "Média",
   high: "Alta",
 };
 
@@ -56,7 +56,7 @@ export function AuditTimeline({ auditLogs }: { auditLogs: AuditLogWithUser[] }) 
           <div className="h-6 w-6 rounded-lg bg-primary/8 flex items-center justify-center">
             <History className="h-3.5 w-3.5 text-primary/70" />
           </div>
-          <CardTitle className="text-lg font-bold">Historico de Mudancas</CardTitle>
+          <CardTitle className="text-lg font-bold">Histórico de Mudanças</CardTitle>
         </div>
       </CardHeader>
       <CardContent>

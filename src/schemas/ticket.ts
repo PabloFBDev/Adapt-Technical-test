@@ -3,18 +3,18 @@ import { z } from "zod";
 export const createTicketSchema = z.object({
   title: z
     .string()
-    .min(3, "Titulo deve ter pelo menos 3 caracteres")
-    .max(120, "Titulo deve ter no maximo 120 caracteres"),
+    .min(3, "Título deve ter pelo menos 3 caracteres")
+    .max(120, "Título deve ter no máximo 120 caracteres"),
   description: z
     .string()
-    .min(10, "Descricao deve ter pelo menos 10 caracteres")
-    .max(5000, "Descricao deve ter no maximo 5000 caracteres"),
+    .min(10, "Descrição deve ter pelo menos 10 caracteres")
+    .max(5000, "Descrição deve ter no máximo 5000 caracteres"),
   priority: z.enum(["low", "medium", "high"], {
     errorMap: () => ({ message: "Prioridade deve ser low, medium ou high" }),
   }),
   tags: z
     .array(z.string().min(1).max(30))
-    .max(10, "Maximo de 10 tags")
+    .max(10, "Máximo de 10 tags")
     .default([]),
 });
 

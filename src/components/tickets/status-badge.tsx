@@ -13,7 +13,7 @@ const statusConfig = {
     glow: true,
   },
   done: {
-    label: "Concluido",
+    label: "Concluído",
     className: "bg-status-done/10 text-status-done border-status-done/25",
     glow: false,
   },

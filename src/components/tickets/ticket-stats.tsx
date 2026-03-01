@@ -37,7 +37,7 @@ const statCards = [
   },
   {
     key: "done" as const,
-    label: "Concluidos",
+    label: "Concluídos",
     icon: CheckCircle2,
     colorClass: "text-status-done",
     bgClass: "bg-status-done/10",

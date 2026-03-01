@@ -169,9 +169,9 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
             <p className="text-sm font-medium text-destructive mb-5">{error}</p>
           ) : (
             <>
-              <p className="text-sm font-semibold mb-1">Analise com IA</p>
+              <p className="text-sm font-semibold mb-1">Análise com IA</p>
               <p className="text-xs text-muted-foreground/70 mb-5 text-center max-w-xs leading-relaxed">
-                Gere um resumo inteligente com sugestoes de proximos passos
+                Gere um resumo inteligente com sugestões de próximos passos
               </p>
             </>
           )}
@@ -277,7 +277,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
         {showSteps.length > 0 && (
           <div>
             <h4 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-3">
-              Proximos Passos
+              Próximos Passos
             </h4>
             <ol className="space-y-2">
               {showSteps.map((step, i) => (
@@ -306,7 +306,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
                 {displayResult.riskLevel === "low"
                   ? "Baixo"
                   : displayResult.riskLevel === "medium"
-                    ? "Medio"
+                    ? "Médio"
                     : "Alto"}
               </Badge>
             </div>

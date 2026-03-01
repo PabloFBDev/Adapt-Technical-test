@@ -11,16 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 
 function validateEmail(email: string): string | null {
-  if (!email) return "Email e obrigatorio";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Email invalido";
+  if (!email) return "Email é obrigatório";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Email inválido";
   return null;
 }
 
 function validatePassword(password: string): string | null {
-  if (!password) return "Senha e obrigatoria";
-  if (password.length < 8) return "Minimo 8 caracteres";
+  if (!password) return "Senha é obrigatória";
+  if (password.length < 8) return "Mínimo 8 caracteres";
   if (!/[a-zA-Z]/.test(password)) return "Deve conter pelo menos uma letra";
-  if (!/[0-9]/.test(password)) return "Deve conter pelo menos um numero";
+  if (!/[0-9]/.test(password)) return "Deve conter pelo menos um número";
   return null;
 }
 
@@ -54,7 +54,7 @@ export function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Email ou senha invalidos");
+      setError("Email ou senha inválidos");
     } else {
       router.push("/tickets");
       router.refresh();
@@ -173,7 +173,7 @@ export function LoginForm() {
                 variant="outline"
                 className="w-full font-mono text-xs text-muted-foreground hover:text-foreground rounded-lg"
               >
-                Voltar para a pagina principal
+                Voltar para a página principal
               </Button>
             </Link>
 
@@ -183,7 +183,7 @@ export function LoginForm() {
                 variant="ghost"
                 className="w-full font-mono text-xs text-muted-foreground hover:text-foreground"
               >
-                Nao tem conta? <span className="text-primary ml-1">Criar conta</span>
+                Não tem conta? <span className="text-primary ml-1">Criar conta</span>
               </Button>
             </Link>
           </div>

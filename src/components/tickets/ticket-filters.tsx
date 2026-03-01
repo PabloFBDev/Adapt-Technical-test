@@ -92,7 +92,7 @@ export function TicketFilters() {
             <SelectItem value="all">Todos status</SelectItem>
             <SelectItem value="open">Aberto</SelectItem>
             <SelectItem value="in_progress">Em Progresso</SelectItem>
-            <SelectItem value="done">Concluido</SelectItem>
+            <SelectItem value="done">Concluído</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -105,7 +105,7 @@ export function TicketFilters() {
           <SelectContent>
             <SelectItem value="all">Todas prioridades</SelectItem>
             <SelectItem value="low">Baixa</SelectItem>
-            <SelectItem value="medium">Media</SelectItem>
+            <SelectItem value="medium">Média</SelectItem>
             <SelectItem value="high">Alta</SelectItem>
           </SelectContent>
         </Select>

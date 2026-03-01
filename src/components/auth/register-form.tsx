@@ -11,22 +11,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 
 function validateEmail(email: string): string | null {
-  if (!email) return "Email e obrigatorio";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Email invalido";
+  if (!email) return "Email é obrigatório";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Email inválido";
   return null;
 }
 
 function validatePassword(password: string): string | null {
-  if (!password) return "Senha e obrigatoria";
-  if (password.length < 8) return "Minimo 8 caracteres";
+  if (!password) return "Senha é obrigatória";
+  if (password.length < 8) return "Mínimo 8 caracteres";
   if (!/[a-zA-Z]/.test(password)) return "Deve conter pelo menos uma letra";
-  if (!/[0-9]/.test(password)) return "Deve conter pelo menos um numero";
+  if (!/[0-9]/.test(password)) return "Deve conter pelo menos um número";
   return null;
 }
 
 function validateConfirmPassword(password: string, confirmPassword: string): string | null {
-  if (!confirmPassword) return "Confirmacao e obrigatoria";
-  if (password !== confirmPassword) return "As senhas nao coincidem";
+  if (!confirmPassword) return "Confirmação é obrigatória";
+  if (password !== confirmPassword) return "As senhas não coincidem";
   return null;
 }
 
@@ -81,7 +81,7 @@ export function RegisterForm() {
       });
 
       if (result?.error) {
-        setError("Conta criada, mas falha no login automatico. Tente fazer login.");
+        setError("Conta criada, mas falha no login automático. Tente fazer login.");
         setLoading(false);
         return;
       }
@@ -89,7 +89,7 @@ export function RegisterForm() {
       router.push("/tickets");
       router.refresh();
     } catch {
-      setError("Erro de conexao. Tente novamente.");
+      setError("Erro de conexão. Tente novamente.");
       setLoading(false);
     }
   };
@@ -238,7 +238,7 @@ export function RegisterForm() {
               variant="ghost"
               className="w-full font-mono text-xs text-muted-foreground hover:text-foreground"
             >
-              Ja tem conta? <span className="text-primary ml-1">Entrar</span>
+              Já tem conta? <span className="text-primary ml-1">Entrar</span>
             </Button>
           </Link>
         </form>
