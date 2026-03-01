@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,9 +50,12 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
   );
   const [providers, setProviders] = useState<string[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    fetch("/api/ai/providers")
+    const controller = new AbortController();
+
+    fetch("/api/ai/providers", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
@@ -60,10 +63,24 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
           setSelectedProvider(data.default);
         }
       })
-      .catch(() => { });
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
   }, []);
 
   const generateSummary = useCallback(async () => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     setLoading(true);
     setStreaming(false);
     setPartialSummary("");
@@ -77,6 +94,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticketId, provider: selectedProvider || undefined }),
+        signal,
       });
 
       if (!res.ok) {
@@ -105,43 +123,53 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
       const decoder = new TextDecoder();
       let buffer = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          if (signal.aborted) {
+            await reader.cancel();
+            return;
+          }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const jsonStr = trimmed.slice(6);
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop() || "";
 
-          try {
-            const chunk = JSON.parse(jsonStr);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const jsonStr = trimmed.slice(6);
 
-            if (chunk.type === "chunk") {
-              if (chunk.field === "summary") {
-                setPartialSummary((prev) =>
-                  prev ? `${prev} ${chunk.content}` : chunk.content
-                );
-              } else if (chunk.field === "nextSteps") {
-                setPartialSteps((prev) => [...prev, chunk.content]);
+            try {
+              const chunk = JSON.parse(jsonStr);
+
+              if (chunk.type === "chunk") {
+                if (chunk.field === "summary") {
+                  setPartialSummary((prev) =>
+                    prev ? `${prev} ${chunk.content}` : chunk.content
+                  );
+                } else if (chunk.field === "nextSteps") {
+                  setPartialSteps((prev) => [...prev, chunk.content]);
+                }
+              } else if (chunk.type === "done") {
+                setResult(chunk.result);
+                setStreaming(false);
+              } else if (chunk.type === "error") {
+                setError(chunk.message || "Falha ao gerar resumo");
+                setStreaming(false);
               }
-            } else if (chunk.type === "done") {
-              setResult(chunk.result);
-              setStreaming(false);
-            } else if (chunk.type === "error") {
-              setError(chunk.message || "Falha ao gerar resumo");
-              setStreaming(false);
+            } catch {
+              // Skip invalid JSON
             }
-          } catch {
-            // Skip invalid JSON
           }
         }
+      } finally {
+        reader.releaseLock();
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError("Falha ao gerar resumo");
       setLoading(false);
       setStreaming(false);

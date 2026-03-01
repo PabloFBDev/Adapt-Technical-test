@@ -44,16 +44,21 @@ export default function SettingsPage() {
   const [editedKeys, setEditedKeys] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetch("/api/settings")
+    const controller = new AbortController();
+
+    fetch("/api/settings", { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setConfig(data);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         toast.error("Erro ao carregar configurações");
         setLoading(false);
       });
+
+    return () => controller.abort();
   }, []);
 
   const handleSave = async () => {

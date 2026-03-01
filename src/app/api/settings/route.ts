@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aiConfigSchema } from "@/schemas/ai";
-import { getAISettings, maskApiKey } from "@/lib/ai/settings";
+import { getAISettings, maskApiKey, invalidateSettingsCache } from "@/lib/ai/settings";
 import { handleApiError } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
@@ -87,6 +87,7 @@ export async function PUT(request: Request) {
       create: { id: "singleton", ...data },
     });
 
+    invalidateSettingsCache();
     const settings = await getAISettings();
 
     return NextResponse.json({

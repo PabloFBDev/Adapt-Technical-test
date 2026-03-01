@@ -11,6 +11,7 @@ const RATE_LIMITS: Record<string, { limit: number; windowSeconds: number }> = {
 
 type RateLimitEntry = { count: number; resetAt: number };
 const rateLimitStore = new Map<string, RateLimitEntry>();
+const MAX_STORE_SIZE = 10_000;
 
 function getRateLimitKey(ip: string, path: string): string | null {
   for (const prefix of Object.keys(RATE_LIMITS)) {
@@ -26,6 +27,16 @@ function checkRateLimit(
   config: { limit: number; windowSeconds: number },
 ): { allowed: boolean; resetAt: number } {
   const now = Date.now();
+
+  if (rateLimitStore.size > MAX_STORE_SIZE) {
+    for (const [k, e] of rateLimitStore) {
+      if (now >= e.resetAt) rateLimitStore.delete(k);
+    }
+    if (rateLimitStore.size > MAX_STORE_SIZE) {
+      rateLimitStore.clear();
+    }
+  }
+
   const entry = rateLimitStore.get(key);
 
   if (!entry || now >= entry.resetAt) {

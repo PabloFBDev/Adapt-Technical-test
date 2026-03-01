@@ -70,10 +70,19 @@ export function TicketStats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/tickets/stats")
+    const controller = new AbortController();
+
+    fetch("/api/tickets/stats", { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => setStats(data))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
   }, []);
 
   if (loading) {

@@ -19,21 +19,28 @@ export function TicketList() {
   const searchString = searchParams.toString();
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchTickets = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/tickets?${searchString}`);
+        const res = await fetch(`/api/tickets?${searchString}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error("Falha ao carregar tickets");
         const json = await res.json();
         setData(json);
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Erro desconhecido");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchTickets();
+
+    return () => controller.abort();
   }, [searchString]);
 
   if (loading) {
@@ -71,7 +78,7 @@ export function TicketList() {
         </div>
         <p className="text-lg font-semibold mb-1">Nenhum ticket encontrado</p>
         <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-          Tente ajustar os filtros ou crie um novo ticket para comecar.
+          Tente ajustar os filtros ou crie um novo ticket para começar.
         </p>
         <Link href="/tickets/new">
           <Button className="gap-2 rounded-lg shadow-lg shadow-primary/15">
@@ -130,7 +137,7 @@ export function TicketList() {
             disabled={pagination.page >= pagination.totalPages}
             className="font-mono rounded-lg gap-1"
           >
-            Proxima
+            Próxima
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>

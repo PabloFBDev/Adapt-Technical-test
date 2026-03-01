@@ -68,17 +68,23 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 - Registro automático em criação e edição
 - Timeline de auditoria na página de detalhe do ticket
 
-### 3. Streaming IA (SSE) com Multi-Provider
+### 3. Rate Limiting
+
+- Sliding window in-memory por IP com limites por rota (auth: 10/min, AI: 20/min, tickets: 60/min)
+- Retorna `429 Too Many Requests` com header `Retry-After`
+
+### 4. Streaming IA (SSE) com Multi-Provider
 
 - Endpoint retorna `text/event-stream`
 - Suporte a **4 providers**: Mock, OpenAI, Anthropic (Claude) e Google Gemini
 - **Seletor de provider na UI** — o usuario escolhe qual IA usar em tempo real
 - Endpoint `GET /api/ai/providers` retorna providers disponiveis (baseado nas API keys configuradas)
 - UI renderiza resultado progressivamente (summary, nextSteps, riskLevel, categories)
+- Stream reader com `AbortController` — cancela streaming automaticamente ao desmontar componente
 - **Tratamento de erros robusto**: módulo `errors.ts` com `AIProviderError` e `extractErrorMessage` — trata erros de API (401, 429, 403), timeout, filtros de segurança e mensagens aninhadas de SDKs
 - **Utilitários de streaming compartilhados**: módulo `stream-utils.ts` com `chunkText`, `delay` e `simulateStream` — reutilizados entre providers
 
-### 4. Painel de Configuracao de IA
+### 5. Painel de Configuracao de IA
 
 - **Pagina `/settings`** para gerenciar providers de IA sem editar env vars ou fazer redeploy
 - Configuracao de API keys, modelos e provider padrao via UI
@@ -86,6 +92,32 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 - Persistencia em Postgres (tabela `AIConfig` singleton) com fallback para env vars
 - Cache TTL configuravel via UI
 - Prioridade: DB > env var > default
+
+---
+
+## Performance e Escalabilidade
+
+### Índices de banco de dados
+
+Índices adicionados para todas as colunas usadas em WHERE/ORDER BY/JOIN:
+- `Ticket`: `status`, `priority`, `createdAt`, `userId`
+- `AuditLog`: composto `[ticketId, createdAt]`, `userId`
+
+### AbortController em todos os fetches
+
+Todos os componentes client-side usam `AbortController` com cleanup no unmount — previne race conditions, memory leaks e dados stale quando o usuário navega rapidamente ou muda filtros.
+
+### Cache in-memory para AISettings
+
+`getAISettings()` usa cache com TTL de 5 minutos, invalidado automaticamente ao salvar configurações via `/settings`.
+
+### Paginação de audit logs
+
+Queries de audit logs limitadas a 20 registros mais recentes para evitar payloads ilimitados em tickets com muitas edições.
+
+### React.memo no TicketCard
+
+Componente memoizado para evitar re-renders desnecessários durante paginação e mudanças de loading state.
 
 ---
 

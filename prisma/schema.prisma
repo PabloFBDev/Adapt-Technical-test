@@ -34,6 +34,11 @@ model Ticket {
 
   auditLogs   AuditLog[]
   aiCache     AICache?
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([userId])
 }
 
 model AuditLog {
@@ -46,6 +51,9 @@ model AuditLog {
   ticket    Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   userId    String
   user      User        @relation(fields: [userId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@index([userId])
 }
 
 model AICache {

@@ -11,12 +11,23 @@ export interface AISettings {
   cacheTtlMs: number;
 }
 
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let cachedSettings: { data: AISettings; expiresAt: number } | null = null;
+
+export function invalidateSettingsCache() {
+  cachedSettings = null;
+}
+
 export async function getAISettings(): Promise<AISettings> {
+  if (cachedSettings && Date.now() < cachedSettings.expiresAt) {
+    return cachedSettings.data;
+  }
+
   const config = await prisma.aIConfig.findUnique({
     where: { id: "singleton" },
   });
 
-  return {
+  const settings: AISettings = {
     defaultProvider:
       config?.defaultProvider || process.env.AI_PROVIDER || "mock",
     openaiApiKey:
@@ -37,6 +48,9 @@ export async function getAISettings(): Promise<AISettings> {
       config?.cacheTtlMs ??
       (Number(process.env.AI_CACHE_TTL_MS) || 3600000),
   };
+
+  cachedSettings = { data: settings, expiresAt: Date.now() + CACHE_TTL };
+  return settings;
 }
 
 export function maskApiKey(key: string | null): string | null {

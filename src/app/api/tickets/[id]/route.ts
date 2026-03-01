@@ -21,6 +21,7 @@ export async function GET(
             user: { select: { id: true, email: true, name: true } },
           },
           orderBy: { createdAt: "desc" },
+          take: 20,
         },
         aiCache: true,
       },

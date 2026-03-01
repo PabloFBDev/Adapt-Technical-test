@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ const priorityBorderColors = {
   high: "border-l-priority-high",
 } as const;
 
-export function TicketCard({ ticket, index = 0 }: { ticket: TicketListItem; index?: number }) {
+export const TicketCard = memo(function TicketCard({ ticket, index = 0 }: { ticket: TicketListItem; index?: number }) {
   const staggerClass = index < 5 ? `stagger-${index + 1}` : "";
   const daysOld = Math.floor((Date.now() - new Date(ticket.createdAt).getTime()) / 86400000);
   const isAging = daysOld > 7 && ticket.status !== "done";
@@ -75,4 +76,4 @@ export function TicketCard({ ticket, index = 0 }: { ticket: TicketListItem; inde
       </Card>
     </Link>
   );
-}
+});
