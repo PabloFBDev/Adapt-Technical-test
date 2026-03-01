@@ -20,7 +20,8 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
                    │
 ┌──────────────────▼──────────────────────────────┐
 │           Backend (Next.js Route Handlers)       │
-│  /api/tickets • /api/ai/* • /api/settings • Auth │
+│  /api/tickets • /api/ai/* • /api/settings •      │
+│  /api/auth/register • Auth                       │
 └──────┬────────────────┬─────────────────────────┘
        │                │
 ┌──────▼──────┐  ┌──────▼──────────────────────┐
@@ -43,7 +44,7 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 | Framework | Next.js 14+ (App Router)  | Exigido. RSC, layouts, route handlers integrados.                 |
 | ORM       | Prisma                    | Type-safety, migrations versionadas, boa integração com Postgres. |
 | Banco     | Supabase (Postgres)       | Hosted, sem Docker, connection string simples.                    |
-| Auth      | NextAuth (Credentials)    | JWT strategy, session handling, middleware de proteção.           |
+| Auth      | NextAuth (Credentials)    | JWT strategy, registro público, middleware de proteção.           |
 | UI        | Tailwind + shadcn/ui      | Componentes acessíveis, estilo clean.                             |
 | Validação | Zod                       | Schemas compartilhados front/back, type inference.                |
 | Testes    | Vitest                    | ESM nativo, rápido, integração natural com TypeScript.            |
@@ -57,7 +58,7 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 
 ### 1. Edição e Mudança de Status
 
-- Endpoint `PATCH /api/tickets/:id` com partial update
+- Endpoint `PATCH /api/tickets/:id` com partial update — qualquer usuário autenticado pode editar qualquer ticket
 - Formulário de edição pré-carregado com valores atuais
 - Mudança de status inline na página de detalhe (dropdown)
 
@@ -122,7 +123,13 @@ npm run dev
 
 O app estará disponível em `http://localhost:3000`.
 
-### Login
+### Acesso
+
+**Criar conta nova (recomendado):**
+
+Acesse `http://localhost:3000/register` e crie sua própria conta. Após o registro, o login é feito automaticamente.
+
+**Conta do seed (admin):**
 
 - Email: `admin@opscopilot.com`
 - Senha: `password123`
