@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { AIProvider, AIStreamChunk } from "./types";
 import { SYSTEM_PROMPT, buildUserPrompt, parseAIResult } from "./prompt";
+import { simulateStream } from "./stream-utils";
 
 export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
@@ -15,7 +16,7 @@ export class AnthropicProvider implements AIProvider {
     title: string;
     description: string;
   }): AsyncGenerator<AIStreamChunk> {
-    const stream = this.client.messages.stream({
+    const message = await this.client.messages.create({
       model: this.model,
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
@@ -23,37 +24,12 @@ export class AnthropicProvider implements AIProvider {
       temperature: 0.3,
     });
 
-    let accumulated = "";
-    let lastYieldedLength = 0;
+    const text = message.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
 
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        accumulated += event.delta.text;
-
-        if (accumulated.length - lastYieldedLength >= 50) {
-          yield {
-            type: "chunk",
-            field: "summary",
-            content: accumulated.substring(lastYieldedLength),
-          };
-          lastYieldedLength = accumulated.length;
-        }
-      }
-    }
-
-    if (accumulated.length > lastYieldedLength) {
-      yield {
-        type: "chunk",
-        field: "summary",
-        content: accumulated.substring(lastYieldedLength),
-      };
-    }
-
-    const result = parseAIResult(accumulated);
-
-    yield { type: "done", result };
+    const result = parseAIResult(text);
+    yield* simulateStream(result);
   }
 }

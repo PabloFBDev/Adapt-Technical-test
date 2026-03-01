@@ -23,13 +23,13 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 │  /api/tickets • /api/ai/* • /api/settings • Auth │
 └──────┬────────────────┬─────────────────────────┘
        │                │
-┌──────▼──────┐  ┌──────▼──────────────────┐
-│  Prisma ORM │  │  AI Provider Layer       │
-│             │  │  Settings → Factory →    │
-└──────┬──────┘  │  Mock/OpenAI/Anthropic/  │
-       │         │  Gemini + Cache (PG)     │
-┌──────▼──────┐  └─────────────────────────┘
-│  Supabase   │
+┌──────▼──────┐  ┌──────▼──────────────────────┐
+│  Prisma ORM │  │  AI Provider Layer           │
+│             │  │  Settings → Factory →        │
+└──────┬──────┘  │  Mock/OpenAI/Anthropic/      │
+       │         │  Gemini + Cache (PG)         │
+┌──────▼──────┐  │  Errors + Stream Utils       │
+│  Supabase   │  └─────────────────────────────┘
 │  (Postgres) │
 └─────────────┘
 ```
@@ -107,9 +107,11 @@ npm run test:coverage
 npx vitest run __tests__/lib/ai/mock-provider.test.ts
 ```
 
-### O que é testado (62 testes)
+### O que é testado (79 testes, 9 arquivos)
 
-- **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, factory resolve provider com settings
+- **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, keyword-based classification, factory resolve provider com settings
+- **AI Errors:** `AIProviderError`, `extractErrorMessage` — tratamento de erros de API (401, 429, 403), timeout, filtros de segurança
+- **AI Stream Utils:** `chunkText`, `delay`, `simulateStream` — utilitários compartilhados de streaming
 - **AI Cache:** get/set/invalidate, TTL expiry, TTL dinamico via settings
 - **Schemas Zod:** Validacao de criacao/edicao de ticket, query params, input do summarize, config de IA
 - **Route Handlers:** Contratos da API (status codes, formato de resposta, validacao de input, auditoria)
@@ -168,6 +170,23 @@ GEMINI_API_KEY="..."
 ```
 
 **Prioridade:** Banco (settings UI) > env var > default.
+
+### Arquitetura multi-provider
+
+A interface `AIProvider` define o contrato. Cada provider implementa `generateSummary()` como `AsyncGenerator`. O streaming suporta chunks de conteúdo e eventos de erro (`AIStreamChunk` com tipo `"error"`):
+
+```
+Settings (getAISettings) → resolve config do DB ou env vars
+Factory (getAIProvider)  → recebe settings, seleciona provider
+                         → OpenAIProvider | AnthropicProvider | GeminiProvider | MockAIProvider
+Errors (errors.ts)       → AIProviderError + extractErrorMessage (tratamento unificado)
+Stream Utils             → chunkText, delay, simulateStream (utilitários compartilhados)
+
+GET  /api/ai/providers   → retorna lista de providers disponiveis + default
+POST /api/ai/summarize   → aceita parametro "provider" para override do default
+GET  /api/settings       → retorna config com API keys mascaradas
+PUT  /api/settings       → atualiza config (upsert no banco)
+```
 
 ---
 

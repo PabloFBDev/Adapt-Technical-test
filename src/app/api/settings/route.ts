@@ -45,7 +45,6 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const input = aiConfigSchema.parse(body);
 
-    // Build update data, skipping masked API key values
     const data: Record<string, unknown> = {};
 
     if (input.defaultProvider !== undefined) {

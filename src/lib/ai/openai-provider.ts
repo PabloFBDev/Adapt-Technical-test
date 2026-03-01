@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import type { AIProvider, AIStreamChunk } from "./types";
 import { SYSTEM_PROMPT, buildUserPrompt, parseAIResult } from "./prompt";
+import { simulateStream } from "./stream-utils";
 
 export class OpenAIProvider implements AIProvider {
   private client: OpenAI;
@@ -15,9 +16,8 @@ export class OpenAIProvider implements AIProvider {
     title: string;
     description: string;
   }): AsyncGenerator<AIStreamChunk> {
-    const stream = await this.client.chat.completions.create({
+    const completion = await this.client.chat.completions.create({
       model: this.model,
-      stream: true,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: buildUserPrompt(input) },
@@ -25,37 +25,8 @@ export class OpenAIProvider implements AIProvider {
       temperature: 0.3,
     });
 
-    let accumulated = "";
-    let lastYieldedLength = 0;
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (!delta) continue;
-
-      accumulated += delta;
-
-      // Yield summary chunks progressively (every ~50 chars)
-      if (accumulated.length - lastYieldedLength >= 50) {
-        yield {
-          type: "chunk",
-          field: "summary",
-          content: accumulated.substring(lastYieldedLength),
-        };
-        lastYieldedLength = accumulated.length;
-      }
-    }
-
-    // Yield any remaining text
-    if (accumulated.length > lastYieldedLength) {
-      yield {
-        type: "chunk",
-        field: "summary",
-        content: accumulated.substring(lastYieldedLength),
-      };
-    }
-
-    const result = parseAIResult(accumulated);
-
-    yield { type: "done", result };
+    const text = completion.choices[0]?.message?.content ?? "";
+    const result = parseAIResult(text);
+    yield* simulateStream(result);
   }
 }

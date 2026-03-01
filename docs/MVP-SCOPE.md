@@ -44,7 +44,7 @@ Funcionalidades exigidas pelo teste técnico. Sem estas, o teste é reprovado.
 
 ## Should Have (Diferenciais Escolhidos)
 
-Funcionalidades extras que demonstram profundidade técnica. São 3 diferenciais (mínimo exigido: 2).
+Funcionalidades extras que demonstram profundidade técnica. São 5 diferenciais implementados (mínimo exigido: 2).
 
 ### 1. Edição e Mudança de Status
 - Endpoint `PATCH /api/tickets/:id` com partial update
@@ -58,16 +58,24 @@ Funcionalidades extras que demonstram profundidade técnica. São 3 diferenciais
 - Timeline de auditoria na página de detalhe do ticket
 - **Complexidade:** Média. Requer lógica de diff e UI de timeline.
 
-### 3. Streaming IA (SSE) com Multi-Provider
+### 3. Rate Limiting
+- Sliding window in-memory por IP no middleware
+- 3 tiers configuráveis: auth (10/min), AI (20/min), tickets (60/min), settings (20/min)
+- Retorna 429 com header `Retry-After`
+- **Complexidade:** Baixa-média. Proteção essencial contra abuso.
+
+### 4. Streaming IA (SSE) com Multi-Provider
 - Endpoint retorna `text/event-stream`
 - **4 providers implementados**: Mock, OpenAI (gpt-4o-mini), Anthropic (claude-haiku-4-5), Gemini (gemini-2.0-flash)
 - **Seletor de provider na UI** — dropdown na página de detalhe do ticket
 - Endpoint `GET /api/ai/providers` retorna providers disponíveis (baseado nas API keys)
 - UI renderiza resultado progressivamente
 - Interface `AIProvider` usa `AsyncGenerator` para suportar streaming
+- **Tratamento de erros robusto**: módulo `errors.ts` com `AIProviderError` e `extractErrorMessage`; eventos de erro propagados via stream (`{ type: "error", message }`)
+- **Utilitários compartilhados**: módulo `stream-utils.ts` com `chunkText`, `delay`, `simulateStream` — reutilizados entre providers
 - **Complexidade:** Alta. Requer SSE no backend + consumo no frontend + integração com 3 APIs externas.
 
-### 4. Painel de Configuração de IA (`/settings`)
+### 5. Painel de Configuração de IA (`/settings`)
 - Página de configurações para gerenciar providers de IA **sem editar `.env` ou fazer redeploy**
 - Configuração de API keys (mascaradas na exibição), modelos, provider padrão e cache TTL
 - Persistência em Postgres (tabela `AIConfig` singleton) com prioridade DB > env var > default
@@ -82,7 +90,7 @@ Funcionalidades extras que demonstram profundidade técnica. São 3 diferenciais
 |---------|--------|
 | ~~Provider real de IA~~ | **Implementado.** OpenAI, Anthropic e Gemini com seleção via UI. |
 | ~~Config via UI~~ | **Implementado.** Painel `/settings` para API keys, modelos, provider padrão e cache TTL. |
-| Rate limit no endpoint IA | Bom para produção, mas não demonstra habilidade técnica diferenciada num teste. |
+| ~~Rate limit~~ | **Implementado.** Sliding window in-memory por IP, 3 tiers (auth, AI, tickets, settings). |
 | RAG com base local | Alta complexidade vs. tempo disponível. Não é core do teste. |
 | Observabilidade (métricas, tracing) | Escopo de infra, não de aplicação. |
 | Docker compose | Supabase é hosted — não precisa de container local para o banco. |
@@ -105,14 +113,14 @@ Supabase dá Postgres hosted sem Docker. Prisma dá migrations explícitas, type
 **Por que multi-provider com seleção via UI?**
 A interface `AIProvider` define o contrato. 4 providers estão implementados (Mock, OpenAI, Anthropic, Gemini). O Mock funciona sem API key, facilitando avaliação. Providers reais são habilitados ao configurar a API key correspondente no `.env`. O seletor na UI permite comparar resultados de diferentes providers em tempo real.
 
-**Por que esses 3 diferenciais?**
+**Por que esses 5 diferenciais?**
 - Edição + status: torna o sistema funcional de verdade (sem isso é read-only)
 - Auditoria: mostra modelagem de dados e lógica de negócio
+- Rate limiting: proteção essencial contra abuso, especialmente em endpoints de IA
 - Streaming SSE: mostra domínio de APIs assíncronas e real-time no frontend
-
 - Painel de configuração: mostra integração completa (Prisma model, API route, Zod schema, UI, segurança de API keys)
 
-Os 4 juntos cobrem backend, modelagem, frontend e operações — boa distribuição de complexidade.
+Os 5 juntos cobrem backend, modelagem, frontend, segurança e operações — boa distribuição de complexidade.
 
 ---
 
@@ -126,5 +134,5 @@ O teste é considerado aprovado quando:
 4. **Testes:** Testes unitários passando para AIProvider, schemas Zod e Route Handlers
 5. **UI:** Interface limpa e moderna (Tailwind + shadcn/ui), com loading/empty/error states
 6. **Documentação:** README cobre tudo que o teste exige — setup, testes, decisões, IA
-7. **Diferenciais:** 3 diferenciais funcionais e bem implementados
+7. **Diferenciais:** 5 diferenciais funcionais e bem implementados
 8. **Avaliação rápida:** Avaliador consegue clonar, rodar `npm install && npm run dev` e testar em < 5 minutos

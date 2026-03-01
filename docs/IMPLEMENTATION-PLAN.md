@@ -34,13 +34,15 @@ Build the Ops Copilot project from scratch based on detailed specs in `docs/`. T
 
 ### Phase 5: AI Provider Layer (Multi-Provider)
 1. Create `src/lib/ai/prompt.ts` — Shared system prompt + result parser for all providers
-2. Create `src/lib/ai/mock-provider.ts` — MockAIProvider with streaming simulation (50-100ms delay per chunk), deterministic results based on keywords
-3. Create `src/lib/ai/openai-provider.ts` — OpenAIProvider using gpt-4o-mini with streaming
-4. Create `src/lib/ai/anthropic-provider.ts` — AnthropicProvider using claude-haiku-4-5 with streaming
-5. Create `src/lib/ai/gemini-provider.ts` — GeminiProvider using gemini-2.0-flash with streaming
-6. Create `src/lib/ai/factory.ts` — getAIProvider(provider?) + getAvailableProviders(). Supports runtime provider selection via parameter or AI_PROVIDER env var.
-7. Create `src/lib/ai/cache.ts` — get/set/invalidate cache logic. **Invalidation** is called from the PATCH ticket handler when title or description change.
-8. Create `src/app/api/ai/providers/route.ts` — GET endpoint returning available providers based on configured API keys.
+2. Create `src/lib/ai/errors.ts` — `AIProviderError` class + `extractErrorMessage()` for unified error handling across providers (401, 429, 403, timeout, safety filters, nested SDK messages)
+3. Create `src/lib/ai/stream-utils.ts` — Shared streaming utilities: `chunkText`, `delay`, `simulateStream` — reused by MockAIProvider and other providers
+4. Create `src/lib/ai/mock-provider.ts` — MockAIProvider with streaming simulation (50-100ms delay per chunk via `simulateStream`), deterministic results based on keywords
+5. Create `src/lib/ai/openai-provider.ts` — OpenAIProvider using gpt-4o-mini with streaming, uses `extractErrorMessage` for error handling
+6. Create `src/lib/ai/anthropic-provider.ts` — AnthropicProvider using claude-haiku-4-5 with streaming, uses `extractErrorMessage` for error handling
+7. Create `src/lib/ai/gemini-provider.ts` — GeminiProvider using gemini-2.0-flash with streaming, uses `extractErrorMessage` for error handling
+8. Create `src/lib/ai/factory.ts` — getAIProvider(settings, provider?) + getAvailableProviders(settings). Uses `AIProviderError` when API key is missing. Supports runtime provider selection.
+9. Create `src/lib/ai/cache.ts` — get/set/invalidate cache logic. **Invalidation** is called from the PATCH ticket handler when title or description change.
+10. Create `src/app/api/ai/providers/route.ts` — GET endpoint returning available providers based on configured API keys.
 
 ### Phase 6: API Route Handlers + Audit Logic
 1. Create `src/lib/utils.ts` — handleApiError helper, cn utility
@@ -88,15 +90,17 @@ Build the Ops Copilot project from scratch based on detailed specs in `docs/`. T
 **7e. Ticket Editing**
 - Create `src/app/tickets/[id]/edit/page.tsx` — edit form pre-loaded with current values
 
-### Phase 9: Tests
+### Phase 9: Tests (79 testes, 9 arquivos)
 1. Create `__tests__/setup.ts` — global mocks (Prisma client mock, NextAuth session mock)
 2. Create `__tests__/lib/ai/mock-provider.test.ts` — valid AIResult, correct streaming chunks, keyword-based risk/categories
-3. Create `__tests__/lib/ai/factory.test.ts` — returns MockAIProvider by default
+3. Create `__tests__/lib/ai/factory.test.ts` — returns MockAIProvider by default, validates API keys, throws AIProviderError
 4. Create `__tests__/lib/ai/cache.test.ts` — get/set/invalidate/TTL expiry
-5. Create `__tests__/schemas/ticket.test.ts` — valid/invalid inputs, defaults, partial updates
-6. Create `__tests__/schemas/ai.test.ts` — ticketId OR {title,description}, rejects invalid
-7. Create `__tests__/api/tickets.test.ts` — POST 201, POST 400, GET list, GET filtered, PATCH + audit log
-8. Create `__tests__/api/ai-summarize.test.ts` — SSE stream, cached response, 404 for missing ticket
+5. Create `__tests__/lib/ai/errors.test.ts` — AIProviderError, extractErrorMessage (401, 429, 403, timeout, safety filters, nested messages)
+6. Create `__tests__/lib/ai/stream-utils.test.ts` — chunkText, delay, simulateStream
+7. Create `__tests__/schemas/ticket.test.ts` — valid/invalid inputs, defaults, partial updates
+8. Create `__tests__/schemas/ai.test.ts` — ticketId OR {title,description}, rejects invalid
+9. Create `__tests__/api/tickets.test.ts` — POST 201, POST 400, GET list, GET filtered, PATCH + audit log
+10. Create `__tests__/api/ai-summarize.test.ts` — SSE stream, cached response, 404 for missing ticket
 
 ### Phase 10: AI Settings Panel
 1. Add `AIConfig` model to `prisma/schema.prisma` — singleton pattern (id="singleton"), fields for defaultProvider, API keys, models, cacheTtlMs

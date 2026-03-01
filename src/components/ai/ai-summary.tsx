@@ -43,6 +43,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
   const [streaming, setStreaming] = useState(false);
   const [partialSummary, setPartialSummary] = useState("");
   const [partialSteps, setPartialSteps] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(!!cachedResult);
   const [cachedAt, setCachedAt] = useState<Date | null>(
     cachedResult ? new Date(cachedResult.createdAt) : null
@@ -59,7 +60,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
           setSelectedProvider(data.default);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const generateSummary = useCallback(async () => {
@@ -68,6 +69,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
     setPartialSummary("");
     setPartialSteps([]);
     setResult(null);
+    setError(null);
     setIsCached(false);
 
     try {
@@ -78,7 +80,8 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
       });
 
       if (!res.ok) {
-        throw new Error("Falha ao gerar resumo");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.error || "Falha ao gerar resumo");
       }
 
       // Check if it's a cached JSON response
@@ -129,6 +132,9 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
             } else if (chunk.type === "done") {
               setResult(chunk.result);
               setStreaming(false);
+            } else if (chunk.type === "error") {
+              setError(chunk.message || "Falha ao gerar resumo");
+              setStreaming(false);
             }
           } catch {
             // Skip invalid JSON
@@ -136,6 +142,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
         }
       }
     } catch {
+      setError("Falha ao gerar resumo");
       setLoading(false);
       setStreaming(false);
     }
@@ -147,15 +154,27 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
 
   if (!result && !streaming) {
     return (
-      <Card className="border-dashed border-ai/30 bg-ai/[0.02]">
+      <Card className={cn(
+        "border-dashed bg-ai/[0.02]",
+        error ? "border-destructive/30" : "border-ai/30"
+      )}>
         <CardContent className="flex flex-col items-center py-8">
-          <div className="rounded-full bg-ai/10 p-4 mb-3 animate-subtle-float">
-            <Sparkles className="h-6 w-6 text-ai" />
+          <div className={cn(
+            "rounded-full p-4 mb-3",
+            error ? "bg-destructive/10" : "bg-ai/10 animate-subtle-float"
+          )}>
+            <Sparkles className={cn("h-6 w-6", error ? "text-destructive" : "text-ai")} />
           </div>
-          <p className="text-sm font-medium mb-1">Analise com IA</p>
-          <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
-            Gere um resumo inteligente com sugestoes de proximos passos
-          </p>
+          {error ? (
+            <p className="text-sm font-medium text-destructive mb-4">{error}</p>
+          ) : (
+            <>
+              <p className="text-sm font-medium mb-1">Analise com IA</p>
+              <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
+                Gere um resumo inteligente com sugestoes de proximos passos
+              </p>
+            </>
+          )}
           <div className="flex items-center gap-2">
             {providers.length > 1 && (
               <Select value={selectedProvider} onValueChange={setSelectedProvider}>

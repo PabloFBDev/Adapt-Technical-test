@@ -1,20 +1,21 @@
 import type { AIResult } from "./types";
 
-export const SYSTEM_PROMPT = `You are a ticket analysis assistant. Given a ticket title and description, produce a JSON analysis with the following structure:
+export const SYSTEM_PROMPT = `Você é um assistente de análise de tickets. Dado o título e a descrição de um ticket, produza uma análise em JSON com a seguinte estrutura:
 
 {
-  "summary": "A concise 2-4 sentence summary of the ticket, its context, and implications.",
-  "nextSteps": ["Step 1", "Step 2", "Step 3"],
+  "summary": "Resumo conciso de 2-4 frases sobre o ticket, seu contexto e implicações.",
+  "nextSteps": ["Passo 1", "Passo 2", "Passo 3"],
   "riskLevel": "low" | "medium" | "high",
   "categories": ["category1", "category2"]
 }
 
-Rules:
-- summary: Summarize what the ticket is about and why it matters.
-- nextSteps: 3-5 actionable next steps to resolve or progress the ticket.
-- riskLevel: "high" for bugs, incidents, security issues, outages. "low" for feature requests, minor improvements. "medium" for everything else.
-- categories: 1-3 labels from: "bug", "feature", "task", "incident", "security", "improvement", "documentation".
-- Respond ONLY with valid JSON. No markdown, no code fences, no extra text.`;
+Regras:
+- summary: Resuma do que se trata o ticket e por que é importante.
+- nextSteps: 3-5 próximos passos acionáveis para resolver ou avançar o ticket.
+- riskLevel: "high" para bugs, incidentes, problemas de segurança, indisponibilidades. "low" para pedidos de funcionalidade, melhorias menores. "medium" para todo o resto.
+- categories: 1-3 rótulos dentre: "bug", "feature", "task", "incident", "security", "improvement", "documentation".
+- Responda SEMPRE em português brasileiro (pt-BR).
+- Responda SOMENTE com JSON válido. Sem markdown, sem blocos de código, sem texto extra.`;
 
 export function buildUserPrompt(input: {
   title: string;
@@ -32,15 +33,15 @@ export function parseAIResult(text: string): AIResult {
     const parsed = JSON.parse(jsonMatch[0]);
 
     return {
-      summary: typeof parsed.summary === "string" ? parsed.summary : "Unable to generate summary.",
-      nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps.filter((s: unknown) => typeof s === "string") : ["Review the ticket details."],
+      summary: typeof parsed.summary === "string" ? parsed.summary : "Não foi possível gerar o resumo.",
+      nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps.filter((s: unknown) => typeof s === "string") : ["Revisar os detalhes do ticket."],
       riskLevel: ["low", "medium", "high"].includes(parsed.riskLevel) ? parsed.riskLevel : "medium",
       categories: Array.isArray(parsed.categories) ? parsed.categories.filter((c: unknown) => typeof c === "string") : ["task"],
     };
   } catch {
     return {
-      summary: "Unable to parse AI response. Please review the ticket manually.",
-      nextSteps: ["Review the ticket details and confirm the scope."],
+      summary: "Não foi possível interpretar a resposta da IA. Revise o ticket manualmente.",
+      nextSteps: ["Revisar os detalhes do ticket e confirmar o escopo."],
       riskLevel: "medium",
       categories: ["task"],
     };

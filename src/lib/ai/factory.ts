@@ -4,6 +4,7 @@ import { MockAIProvider } from "./mock-provider";
 import { OpenAIProvider } from "./openai-provider";
 import { AnthropicProvider } from "./anthropic-provider";
 import { GeminiProvider } from "./gemini-provider";
+import { AIProviderError } from "./errors";
 
 export function getAvailableProviders(settings: AISettings): string[] {
   const providers: string[] = ["mock"];
@@ -23,18 +24,27 @@ export function getAIProvider(
 
   switch (selected) {
     case "openai":
+      if (!settings.openaiApiKey) {
+        throw new AIProviderError("Chave de API do OpenAI não configurada. Adicione em Configurações.");
+      }
       return new OpenAIProvider({
-        apiKey: settings.openaiApiKey || "",
+        apiKey: settings.openaiApiKey,
         model: settings.openaiModel,
       });
     case "anthropic":
+      if (!settings.anthropicApiKey) {
+        throw new AIProviderError("Chave de API do Anthropic não configurada. Adicione em Configurações.");
+      }
       return new AnthropicProvider({
-        apiKey: settings.anthropicApiKey || "",
+        apiKey: settings.anthropicApiKey,
         model: settings.anthropicModel,
       });
     case "gemini":
+      if (!settings.geminiApiKey) {
+        throw new AIProviderError("Chave de API do Gemini não configurada. Adicione em Configurações.");
+      }
       return new GeminiProvider({
-        apiKey: settings.geminiApiKey || "",
+        apiKey: settings.geminiApiKey,
         model: settings.geminiModel,
       });
     default:

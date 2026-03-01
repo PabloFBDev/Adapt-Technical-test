@@ -7,7 +7,8 @@ export interface AIResult {
 
 export type AIStreamChunk =
   | { type: "chunk"; field: keyof AIResult; content: string }
-  | { type: "done"; result: AIResult };
+  | { type: "done"; result: AIResult }
+  | { type: "error"; message: string };
 
 export interface AIProvider {
   generateSummary(input: {

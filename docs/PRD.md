@@ -236,7 +236,8 @@ interface AIResult {
 - Response com `Content-Type: text/event-stream`
 - Eventos: `data: { type: "chunk", field: "summary", content: "..." }`
 - Evento final: `data: { type: "done", result: AIResult }`
-- MockAIProvider simula chunks com delay de 50–100ms entre cada um
+- Evento de erro: `data: { type: "error", message: "..." }` — erros amigáveis em PT-BR
+- MockAIProvider simula chunks com delay de 50–100ms entre cada um (via `simulateStream` de `stream-utils.ts`)
 
 ### Interface AIProvider
 
@@ -247,7 +248,8 @@ interface AIProvider {
 
 type AIStreamChunk =
   | { type: "chunk"; field: keyof AIResult; content: string }
-  | { type: "done"; result: AIResult };
+  | { type: "done"; result: AIResult }
+  | { type: "error"; message: string };
 ```
 
 ### MockAIProvider

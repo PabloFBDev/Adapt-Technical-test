@@ -1,4 +1,5 @@
 import type { AIProvider, AIResult, AIStreamChunk } from "./types";
+import { simulateStream } from "./stream-utils";
 
 export class MockAIProvider implements AIProvider {
   async *generateSummary(input: {
@@ -6,26 +7,7 @@ export class MockAIProvider implements AIProvider {
     description: string;
   }): AsyncGenerator<AIStreamChunk> {
     const result = this.buildResult(input);
-
-    const summaryChunks = this.chunkText(result.summary, 10);
-    for (const chunk of summaryChunks) {
-      yield { type: "chunk", field: "summary", content: chunk };
-      await this.delay(50 + Math.random() * 50);
-    }
-
-    for (const step of result.nextSteps) {
-      yield { type: "chunk", field: "nextSteps", content: step };
-      await this.delay(80 + Math.random() * 40);
-    }
-
-    yield { type: "chunk", field: "riskLevel", content: result.riskLevel };
-    yield {
-      type: "chunk",
-      field: "categories",
-      content: JSON.stringify(result.categories),
-    };
-
-    yield { type: "done", result };
+    yield* simulateStream(result);
   }
 
   buildResult(input: { title: string; description: string }): AIResult {
@@ -83,10 +65,10 @@ export class MockAIProvider implements AIProvider {
     riskLevel: string
   ): string {
     const sentences = [
-      `This ticket describes: "${input.title}".`,
-      `The reported issue involves the following context: ${input.description.substring(0, 100)}${input.description.length > 100 ? "..." : ""}.`,
-      `Based on the analysis, the risk level has been assessed as ${riskLevel}.`,
-      `This item requires attention and should be prioritized accordingly.`,
+      `Este ticket descreve: "${input.title}".`,
+      `O problema reportado envolve o seguinte contexto: ${input.description.substring(0, 100)}${input.description.length > 100 ? "..." : ""}.`,
+      `Com base na análise, o nível de risco foi avaliado como ${riskLevel}.`,
+      `Este item requer atenção e deve ser priorizado adequadamente.`,
     ];
     return sentences.join(" ");
   }
@@ -97,38 +79,25 @@ export class MockAIProvider implements AIProvider {
   ): string[] {
     const steps: string[] = [];
 
-    steps.push("Review the ticket details and confirm the scope of the issue.");
+    steps.push("Revisar os detalhes do ticket e confirmar o escopo do problema.");
 
     if (categories.includes("bug") || categories.includes("incident")) {
-      steps.push("Investigate root cause and check related logs.");
-      steps.push("Prepare a hotfix or workaround if the issue is critical.");
-      steps.push("Notify stakeholders about the current status.");
+      steps.push("Investigar a causa raiz e verificar logs relacionados.");
+      steps.push("Preparar um hotfix ou solução alternativa se o problema for crítico.");
+      steps.push("Notificar as partes interessadas sobre o status atual.");
     } else if (categories.includes("feature")) {
-      steps.push("Define acceptance criteria and technical requirements.");
-      steps.push("Create implementation plan with estimated effort.");
-      steps.push("Schedule a review with the team.");
+      steps.push("Definir critérios de aceitação e requisitos técnicos.");
+      steps.push("Criar plano de implementação com estimativa de esforço.");
+      steps.push("Agendar uma revisão com a equipe.");
     } else {
-      steps.push("Assign the task to the appropriate team member.");
-      steps.push("Set a deadline and track progress.");
+      steps.push("Atribuir a tarefa ao membro apropriado da equipe.");
+      steps.push("Definir prazo e acompanhar o progresso.");
     }
 
     if (input.description.length > 200) {
-      steps.push("Consider breaking this into smaller sub-tasks.");
+      steps.push("Considerar dividir em subtarefas menores.");
     }
 
     return steps;
-  }
-
-  private chunkText(text: string, wordsPerChunk: number): string[] {
-    const words = text.split(" ");
-    const chunks: string[] = [];
-    for (let i = 0; i < words.length; i += wordsPerChunk) {
-      chunks.push(words.slice(i, i + wordsPerChunk).join(" "));
-    }
-    return chunks;
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

@@ -84,6 +84,8 @@ ops-copilot/
 │   │   │   ├── anthropic-provider.ts # AnthropicProvider (claude-haiku-4-5)
 │   │   │   ├── gemini-provider.ts    # GeminiProvider (gemini-2.0-flash)
 │   │   │   ├── prompt.ts            # System prompt + parser de resultado
+│   │   │   ├── errors.ts           # AIProviderError + extractErrorMessage (tratamento unificado de erros)
+│   │   │   ├── stream-utils.ts     # chunkText, delay, simulateStream (utilitários compartilhados)
 │   │   │   ├── settings.ts         # getAISettings() + maskApiKey() — resolve config DB > env > default
 │   │   │   ├── factory.ts           # getAIProvider(settings) + getAvailableProviders(settings)
 │   │   │   └── cache.ts             # Lógica de cache (get/set/invalidate) com TTL dinâmico
@@ -99,7 +101,9 @@ ops-copilot/
 │   │   └── ai/
 │   │       ├── mock-provider.test.ts
 │   │       ├── factory.test.ts
-│   │       └── cache.test.ts
+│   │       ├── cache.test.ts
+│   │       ├── errors.test.ts
+│   │       └── stream-utils.test.ts
 │   ├── schemas/
 │   │   ├── ticket.test.ts
 │   │   └── ai.test.ts
@@ -229,7 +233,8 @@ export interface AIResult {
 
 export type AIStreamChunk =
   | { type: "chunk"; field: keyof AIResult; content: string }
-  | { type: "done"; result: AIResult };
+  | { type: "done"; result: AIResult }
+  | { type: "error"; message: string };
 
 export interface AIProvider {
   generateSummary(input: {
@@ -599,6 +604,8 @@ graph TB
     subgraph Services ["Services"]
         AISettings["AISettings<br/>DB > env > default"]
         AIFactory["AIProviderFactory"]
+        AIErrors["AIErrors<br/>AIProviderError + extractErrorMessage"]
+        AIStreamUtils["StreamUtils<br/>chunkText, delay, simulateStream"]
         MockAI["MockAIProvider"]
         OpenAI["OpenAIProvider"]
         Anthropic["AnthropicProvider"]
@@ -624,10 +631,15 @@ graph TB
     API_Settings --> AISettings
     API_Settings --> Prisma
     AISettings --> AIFactory
+    AIFactory --> AIErrors
     AIFactory --> MockAI
     AIFactory --> OpenAI
     AIFactory --> Anthropic
     AIFactory --> Gemini
+    MockAI --> AIStreamUtils
+    OpenAI --> AIErrors
+    Anthropic --> AIErrors
+    Gemini --> AIErrors
     Audit --> Prisma
     Cache --> Prisma
     Prisma --> Supabase
