@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,40 +24,73 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
-export function LoginForm() {
+function validateConfirmPassword(password: string, confirmPassword: string): string | null {
+  if (!confirmPassword) return "Confirmacao e obrigatoria";
+  if (password !== confirmPassword) return "As senhas nao coincidem";
+  return null;
+}
+
+export function RegisterForm() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const emailError = touched.email ? validateEmail(email) : null;
   const passwordError = touched.password ? validatePassword(password) : null;
-  const isFormValid = !validateEmail(email) && !validatePassword(password);
+  const confirmPasswordError = touched.confirmPassword
+    ? validateConfirmPassword(password, confirmPassword)
+    : null;
+
+  const isFormValid =
+    !validateEmail(email) &&
+    !validatePassword(password) &&
+    !validateConfirmPassword(password, confirmPassword);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ email: true, password: true });
+    setTouched({ email: true, password: true, confirmPassword: true });
     setError("");
 
     if (!isFormValid) return;
 
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name || undefined, email, password }),
+      });
 
-    setLoading(false);
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Erro ao criar conta");
+        setLoading(false);
+        return;
+      }
 
-    if (result?.error) {
-      setError("Email ou senha invalidos");
-    } else {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Conta criada, mas falha no login automático. Tente fazer login.");
+        setLoading(false);
+        return;
+      }
+
       router.push("/tickets");
       router.refresh();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+      setLoading(false);
     }
   };
 
@@ -73,12 +106,29 @@ export function LoginForm() {
           <span className="font-black">Copilot</span>
         </div>
         <CardDescription className="font-mono text-xs uppercase tracking-wider mt-1">
-          acesse sua conta
+          criar conta
         </CardDescription>
       </CardHeader>
 
       <CardContent className="pt-8 pb-8">
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              Nome <span className="text-muted-foreground/50">(opcional)</span>
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+              <Input
+                id="name"
+                type="text"
+                placeholder="Seu nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="pl-10 h-11"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               E-mail
@@ -129,6 +179,31 @@ export function LoginForm() {
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword" className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              Confirmar Senha
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
+                className="pl-10 h-11"
+                aria-invalid={!!confirmPasswordError}
+              />
+            </div>
+            {confirmPasswordError && (
+              <p className="font-mono text-xs text-destructive flex items-center gap-1 animate-scale-in">
+                <span className="inline-block h-1 w-1 rounded-full bg-destructive" />
+                {confirmPasswordError}
+              </p>
+            )}
+          </div>
+
           {error && (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 animate-scale-in">
               <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
@@ -144,33 +219,23 @@ export function LoginForm() {
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Entrando...
+                Criando...
               </span>
             ) : (
               <>
-                Entrar
+                Criar conta
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </Button>
 
-          <Link href="/tickets" className="block">
+          <Link href="/login" className="block">
             <Button
               type="button"
               variant="ghost"
               className="w-full font-mono text-xs text-muted-foreground hover:text-foreground"
             >
-              Voltar para a página principal
-            </Button>
-          </Link>
-
-          <Link href="/register" className="block">
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full font-mono text-xs text-muted-foreground hover:text-foreground"
-            >
-              Não tem conta? Criar conta
+              Já tem conta? Entrar
             </Button>
           </Link>
         </form>

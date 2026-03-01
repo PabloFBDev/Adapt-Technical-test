@@ -55,10 +55,6 @@ export async function PATCH(
       throw new NotFoundError("Ticket not found");
     }
 
-    if (existingTicket.userId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const body = await request.json();
     const data = updateTicketSchema.parse(body);
 
