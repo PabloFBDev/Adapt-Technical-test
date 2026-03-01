@@ -128,7 +128,7 @@ npm run test:coverage
 npx vitest run __tests__/lib/ai/mock-provider.test.ts
 ```
 
-### O que é testado (59 testes)
+### O que é testado (62 testes)
 
 - **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, keyword-based classification, factory resolve provider
 - **AI Cache:** get/set/invalidate, TTL expiry
