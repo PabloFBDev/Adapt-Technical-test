@@ -21,13 +21,17 @@ export async function POST(request: Request) {
     let description: string;
     let ticketId: string | null = null;
 
+    const explicitProvider = "provider" in input ? input.provider : undefined;
+
     if ("ticketId" in input) {
       ticketId = input.ticketId;
 
-      // Check cache first
-      const cached = await getCachedResult(ticketId);
-      if (cached) {
-        return NextResponse.json({ data: cached, cached: true });
+      // Check cache only when using the default provider
+      if (!explicitProvider) {
+        const cached = await getCachedResult(ticketId);
+        if (cached) {
+          return NextResponse.json({ data: cached, cached: true });
+        }
       }
 
       const ticket = await prisma.ticket.findUnique({
@@ -45,7 +49,7 @@ export async function POST(request: Request) {
 
     // Stream response via SSE
     const encoder = new TextEncoder();
-    const provider = getAIProvider();
+    const provider = getAIProvider(explicitProvider);
 
     const STREAM_TIMEOUT_MS = 30_000;
 

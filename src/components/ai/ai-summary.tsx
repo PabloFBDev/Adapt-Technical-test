@@ -1,14 +1,28 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AISummarySkeleton } from "./ai-summary-skeleton";
 import { cn } from "@/lib/utils";
 import type { AIResult } from "@/lib/ai/types";
 import type { AICache } from "@prisma/client";
+
+const PROVIDER_LABELS: Record<string, string> = {
+  mock: "Mock (teste)",
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  gemini: "Gemini",
+};
 
 interface AISummaryProps {
   ticketId: string;
@@ -33,6 +47,20 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
   const [cachedAt, setCachedAt] = useState<Date | null>(
     cachedResult ? new Date(cachedResult.createdAt) : null
   );
+  const [providers, setProviders] = useState<string[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/ai/providers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setProviders(data.providers);
+          setSelectedProvider(data.default);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const generateSummary = useCallback(async () => {
     setLoading(true);
@@ -46,7 +74,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
       const res = await fetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId }),
+        body: JSON.stringify({ ticketId, provider: selectedProvider || undefined }),
       });
 
       if (!res.ok) {
@@ -111,7 +139,7 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
       setLoading(false);
       setStreaming(false);
     }
-  }, [ticketId]);
+  }, [ticketId, selectedProvider]);
 
   if (loading) {
     return <AISummarySkeleton />;
@@ -128,10 +156,26 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
           <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
             Gere um resumo inteligente com sugestoes de proximos passos
           </p>
-          <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white gap-2">
-            <Sparkles className="h-4 w-4" />
-            Gerar Resumo
-          </Button>
+          <div className="flex items-center gap-2">
+            {providers.length > 1 && (
+              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                <SelectTrigger className="w-[160px] h-9">
+                  <SelectValue placeholder="Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {PROVIDER_LABELS[p] || p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={generateSummary} className="bg-ai hover:bg-ai/90 text-white gap-2">
+              <Sparkles className="h-4 w-4" />
+              Gerar Resumo
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -171,6 +215,20 @@ export function AISummary({ ticketId, cachedResult }: AISummaryProps) {
               <Badge variant="secondary" className="animate-pulse font-mono text-[11px]">
                 Gerando...
               </Badge>
+            )}
+            {providers.length > 1 && (
+              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {PROVIDER_LABELS[p] || p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
             <Button variant="outline" size="sm" onClick={generateSummary}>
               Regenerar

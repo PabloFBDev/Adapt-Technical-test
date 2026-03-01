@@ -9,7 +9,10 @@
       "Bash(npx vitest:*)",
       "Bash(npx next:*)",
       "Bash(xargs ls:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(wc:*)",
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
