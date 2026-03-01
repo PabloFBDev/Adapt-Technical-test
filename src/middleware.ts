@@ -85,6 +85,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Allow public GET requests for tickets API (list + detail)
+  if (
+    pathname.startsWith("/api/tickets") &&
+    request.method === "GET"
+  ) {
+    return NextResponse.next();
+  }
+
   // Auth check for protected routes
   const token = await getToken({ req: request });
 
