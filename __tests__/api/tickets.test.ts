@@ -283,10 +283,15 @@ describe("PATCH /api/tickets/:id", () => {
     expect(response.status).toBe(401);
   });
 
-  it("should return 403 when user does not own the ticket", async () => {
+  it("should allow any authenticated user to edit any ticket (collaborative model)", async () => {
     const otherUser = { id: "user-2", email: "other@opscopilot.com", name: "Other" };
     mockGetSession.mockResolvedValue({ user: otherUser, expires: "" });
     mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+    mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+      return fn(mockPrisma);
+    });
+    mockPrisma.ticket.update.mockResolvedValue({ ...mockTicket, status: "done" } as never);
+    mockPrisma.auditLog.create.mockResolvedValue({} as never);
 
     const request = new Request("http://localhost/api/tickets/ticket-1", {
       method: "PATCH",
@@ -298,6 +303,6 @@ describe("PATCH /api/tickets/:id", () => {
       params: Promise.resolve({ id: "ticket-1" }),
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
   });
 });
