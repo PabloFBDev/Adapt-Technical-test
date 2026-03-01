@@ -43,13 +43,17 @@ describe("GET /api/tickets", () => {
     expect(data.pagination.total).toBe(1);
   });
 
-  it("should return 401 when not authenticated", async () => {
+  it("should return tickets without authentication (public)", async () => {
     mockGetSession.mockResolvedValue(null);
+    mockPrisma.ticket.findMany.mockResolvedValue([mockTicket]);
+    mockPrisma.ticket.count.mockResolvedValue(1);
 
     const request = new Request("http://localhost/api/tickets");
     const response = await GET(request);
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toHaveProperty("data");
   });
 
   it("should filter by status", async () => {
@@ -189,15 +193,22 @@ describe("GET /api/tickets/:id", () => {
     expect(response.status).toBe(404);
   });
 
-  it("should return 401 when not authenticated", async () => {
+  it("should return ticket details without authentication (public)", async () => {
     mockGetSession.mockResolvedValue(null);
+    mockPrisma.ticket.findUnique.mockResolvedValue({
+      ...mockTicket,
+      auditLogs: [],
+      aiCache: null,
+    } as never);
 
     const request = new Request("http://localhost/api/tickets/ticket-1");
     const response = await GET_DETAIL(request, {
       params: Promise.resolve({ id: "ticket-1" }),
     });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.data.id).toBe("ticket-1");
   });
 });
 

@@ -40,6 +40,7 @@ export async function GET() {
       byPriority,
     });
   } catch (error) {
+    console.error("[stats] Error:", error);
     return handleApiError(error);
   }
 }
