@@ -58,12 +58,21 @@ Funcionalidades extras que demonstram profundidade técnica. São 3 diferenciais
 - Timeline de auditoria na página de detalhe do ticket
 - **Complexidade:** Média. Requer lógica de diff e UI de timeline.
 
-### 3. Streaming IA (SSE)
+### 3. Streaming IA (SSE) com Multi-Provider
 - Endpoint retorna `text/event-stream`
-- MockAIProvider simula chunks com delay (50–100ms)
+- **4 providers implementados**: Mock, OpenAI (gpt-4o-mini), Anthropic (claude-haiku-4-5), Gemini (gemini-2.0-flash)
+- **Seletor de provider na UI** — dropdown na página de detalhe do ticket
+- Endpoint `GET /api/ai/providers` retorna providers disponíveis (baseado nas API keys)
 - UI renderiza resultado progressivamente
 - Interface `AIProvider` usa `AsyncGenerator` para suportar streaming
-- **Complexidade:** Média-alta. Requer SSE no backend + consumo no frontend.
+- **Complexidade:** Alta. Requer SSE no backend + consumo no frontend + integração com 3 APIs externas.
+
+### 4. Painel de Configuração de IA (`/settings`)
+- Página de configurações para gerenciar providers de IA **sem editar `.env` ou fazer redeploy**
+- Configuração de API keys (mascaradas na exibição), modelos, provider padrão e cache TTL
+- Persistência em Postgres (tabela `AIConfig` singleton) com prioridade DB > env var > default
+- API `GET /api/settings` (keys mascaradas) + `PUT /api/settings` (upsert)
+- **Complexidade:** Média. Requer model Prisma, API route, Zod schema, UI de formulário e lógica de mascaramento.
 
 ---
 
@@ -71,7 +80,8 @@ Funcionalidades extras que demonstram profundidade técnica. São 3 diferenciais
 
 | Feature | Motivo |
 |---------|--------|
-| Provider real de IA (OpenAI/Anthropic/Gemini) | Interface plugável está pronta; implementação real é só instanciar. Não agrega pro avaliador sem demonstrar algo novo. |
+| ~~Provider real de IA~~ | **Implementado.** OpenAI, Anthropic e Gemini com seleção via UI. |
+| ~~Config via UI~~ | **Implementado.** Painel `/settings` para API keys, modelos, provider padrão e cache TTL. |
 | Rate limit no endpoint IA | Bom para produção, mas não demonstra habilidade técnica diferenciada num teste. |
 | RAG com base local | Alta complexidade vs. tempo disponível. Não é core do teste. |
 | Observabilidade (métricas, tracing) | Escopo de infra, não de aplicação. |
@@ -92,15 +102,17 @@ Supabase dá Postgres hosted sem Docker. Prisma dá migrations explícitas, type
 **Por que NextAuth Credentials?**
 É a solução mais robusta dentre as opções permitidas. Tem session handling, CSRF protection, e JWT built-in. Credentials provider é simples de implementar e o avaliador conhece o padrão.
 
-**Por que MockAIProvider como único provider?**
-A interface `AIProvider` é o que importa — demonstra abstração, inversão de dependência e testabilidade. O mock funciona sem API key, facilitando avaliação. Um provider real seria apenas um adapter.
+**Por que multi-provider com seleção via UI?**
+A interface `AIProvider` define o contrato. 4 providers estão implementados (Mock, OpenAI, Anthropic, Gemini). O Mock funciona sem API key, facilitando avaliação. Providers reais são habilitados ao configurar a API key correspondente no `.env`. O seletor na UI permite comparar resultados de diferentes providers em tempo real.
 
 **Por que esses 3 diferenciais?**
 - Edição + status: torna o sistema funcional de verdade (sem isso é read-only)
 - Auditoria: mostra modelagem de dados e lógica de negócio
 - Streaming SSE: mostra domínio de APIs assíncronas e real-time no frontend
 
-Os 3 juntos cobrem backend, modelagem e frontend — boa distribuição de complexidade.
+- Painel de configuração: mostra integração completa (Prisma model, API route, Zod schema, UI, segurança de API keys)
+
+Os 4 juntos cobrem backend, modelagem, frontend e operações — boa distribuição de complexidade.
 
 ---
 

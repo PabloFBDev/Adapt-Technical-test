@@ -32,10 +32,15 @@ Build the Ops Copilot project from scratch based on detailed specs in `docs/`. T
 2. Create `src/app/api/auth/[...nextauth]/route.ts`
 3. Create `src/middleware.ts` — **Important:** matcher covers `/tickets/new`, `/tickets/:path*/edit`, `/api/ai/:path*`. For `/api/tickets/:path*`, the GET (public) vs POST/PATCH (protected) distinction is handled **inside each route handler** with `getServerSession()` checks, not in middleware.
 
-### Phase 5: AI Provider Layer
-1. Create `src/lib/ai/mock-provider.ts` — MockAIProvider with streaming simulation (50-100ms delay per chunk), deterministic results based on keywords
-2. Create `src/lib/ai/factory.ts` — getAIProvider() returns MockAIProvider by default
-3. Create `src/lib/ai/cache.ts` — get/set/invalidate cache logic. **Invalidation** is called from the PATCH ticket handler when title or description change.
+### Phase 5: AI Provider Layer (Multi-Provider)
+1. Create `src/lib/ai/prompt.ts` — Shared system prompt + result parser for all providers
+2. Create `src/lib/ai/mock-provider.ts` — MockAIProvider with streaming simulation (50-100ms delay per chunk), deterministic results based on keywords
+3. Create `src/lib/ai/openai-provider.ts` — OpenAIProvider using gpt-4o-mini with streaming
+4. Create `src/lib/ai/anthropic-provider.ts` — AnthropicProvider using claude-haiku-4-5 with streaming
+5. Create `src/lib/ai/gemini-provider.ts` — GeminiProvider using gemini-2.0-flash with streaming
+6. Create `src/lib/ai/factory.ts` — getAIProvider(provider?) + getAvailableProviders(). Supports runtime provider selection via parameter or AI_PROVIDER env var.
+7. Create `src/lib/ai/cache.ts` — get/set/invalidate cache logic. **Invalidation** is called from the PATCH ticket handler when title or description change.
+8. Create `src/app/api/ai/providers/route.ts` — GET endpoint returning available providers based on configured API keys.
 
 ### Phase 6: API Route Handlers + Audit Logic
 1. Create `src/lib/utils.ts` — handleApiError helper, cn utility
@@ -93,7 +98,24 @@ Build the Ops Copilot project from scratch based on detailed specs in `docs/`. T
 7. Create `__tests__/api/tickets.test.ts` — POST 201, POST 400, GET list, GET filtered, PATCH + audit log
 8. Create `__tests__/api/ai-summarize.test.ts` — SSE stream, cached response, 404 for missing ticket
 
-### Phase 10: Final Polish & Verification
+### Phase 10: AI Settings Panel
+1. Add `AIConfig` model to `prisma/schema.prisma` — singleton pattern (id="singleton"), fields for defaultProvider, API keys, models, cacheTtlMs
+2. Run `npx prisma migrate dev --name add-ai-config`
+3. Create `src/lib/ai/settings.ts` — `getAISettings()` (DB > env > default), `maskApiKey()`
+4. Refactor `src/lib/ai/factory.ts` — `getAIProvider(settings, provider?)` and `getAvailableProviders(settings)` receive settings as param
+5. Refactor providers (`openai-provider.ts`, `anthropic-provider.ts`, `gemini-provider.ts`) — accept `{ apiKey, model }` in constructor
+6. Refactor `src/lib/ai/cache.ts` — `setCachedResult()` accepts optional `cacheTtlMs` param
+7. Add `aiConfigSchema` to `src/schemas/ai.ts` — Zod validation for settings
+8. Create `src/app/api/settings/route.ts` — GET (masked keys) + PUT (upsert, skip masked values)
+9. Refactor `src/app/api/ai/providers/route.ts` — use `getAISettings()`
+10. Refactor `src/app/api/ai/summarize/route.ts` — use `getAISettings()` for provider resolution and cache TTL
+11. Create `src/app/settings/page.tsx` — settings form (provider select, API key inputs with visibility toggle, model inputs, cache TTL)
+12. Update `src/components/layout/navbar.tsx` — add Settings icon link
+13. Update `src/middleware.ts` — add `/settings` and `/api/settings` to matcher + rate limiting
+14. Update `__tests__/setup.ts` — add `aIConfig` mock
+15. Update `__tests__/lib/ai/factory.test.ts` — pass settings param
+
+### Phase 11: Final Polish & Verification
 1. Copy `docs/README.md` to root `README.md`
 2. Verify `.env.example` is complete
 3. `npm run lint` — fix any lint errors
@@ -104,7 +126,10 @@ Build the Ops Copilot project from scratch based on detailed specs in `docs/`. T
 ## Key Technical Decisions
 - NextAuth v4 (JWT strategy, no DB adapter for sessions)
 - Middleware protects page routes; API route handlers check session internally for method-level granularity
-- MockAIProvider as default — deterministic, no API key needed
+- Multi-provider support: Mock (default), OpenAI, Anthropic, Gemini — selectable via UI dropdown
+- AI settings panel: API keys, models, default provider, cache TTL — configurable via UI, stored in DB
+- Settings resolution: DB > env var > default (no redeploy needed to change AI config)
+- MockAIProvider as fallback — deterministic, no API key needed
 - SSE for AI streaming (not WebSockets)
 - Offset-based pagination (page/limit)
 - Audit log diff computed in PATCH handler, stored as JSON

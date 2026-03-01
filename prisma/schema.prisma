@@ -69,6 +69,19 @@ enum TicketPriority {
   high
 }
 
+model AIConfig {
+  id              String   @id @default("singleton")
+  defaultProvider String   @default("mock")
+  openaiApiKey    String?
+  openaiModel     String?
+  anthropicApiKey String?
+  anthropicModel  String?
+  geminiApiKey    String?
+  geminiModel     String?
+  cacheTtlMs      Int      @default(3600000)
+  updatedAt       DateTime @updatedAt
+}
+
 enum AuditAction {
   created
   updated

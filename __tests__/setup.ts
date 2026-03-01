@@ -24,6 +24,10 @@ vi.mock("@/lib/prisma", () => {
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
+    aIConfig: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
     $transaction: vi.fn(async (fn: (tx: typeof mockPrismaClient) => Promise<unknown>) => {
       return fn(mockPrismaClient);
     }),

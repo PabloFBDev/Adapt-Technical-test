@@ -43,7 +43,22 @@ O sistema usa NextAuth para autenticação, Supabase (Postgres) com Prisma como 
 | ticketId   | String   | FK para Ticket (unique)                    |
 | result     | JSON     | AIResult completo (summary, nextSteps, etc)|
 | createdAt  | DateTime | Gerado automaticamente                     |
-| expiresAt  | DateTime | createdAt + 1 hora (TTL configurável)      |
+| expiresAt  | DateTime | createdAt + TTL (configurável via settings)|
+
+### Entidade: AIConfig
+
+| Campo           | Tipo     | Regras                                     |
+|-----------------|----------|--------------------------------------------|
+| id              | String   | Fixo: "singleton" (sempre 1 row)           |
+| defaultProvider | String   | Default: "mock"                            |
+| openaiApiKey    | String?  | API key do OpenAI (opcional)               |
+| openaiModel     | String?  | Modelo do OpenAI (opcional)                |
+| anthropicApiKey | String?  | API key do Anthropic (opcional)            |
+| anthropicModel  | String?  | Modelo do Anthropic (opcional)             |
+| geminiApiKey    | String?  | API key do Gemini (opcional)               |
+| geminiModel     | String?  | Modelo do Gemini (opcional)                |
+| cacheTtlMs      | Int      | Default: 3600000 (1 hora)                  |
+| updatedAt       | DateTime | Atualizado automaticamente                 |
 
 ---
 
@@ -246,22 +261,53 @@ type AIStreamChunk =
 - Gera `summary` de 3–4 frases genéricas baseadas no input
 - Gera `nextSteps` de 3–5 itens
 
-### AIProviderFactory
+### AISettings (Configuração Dinâmica)
 
 ```typescript
-function getAIProvider(): AIProvider {
-  if (process.env.AI_PROVIDER === "openai" && process.env.OPENAI_API_KEY) {
-    return new OpenAIProvider();
-  }
-  // ...outros providers futuros
-  return new MockAIProvider();
+async function getAISettings(): Promise<AISettings> {
+  // Resolve config com prioridade: DB (tabela AIConfig) > env var > default
+  const config = await prisma.aIConfig.findUnique({ where: { id: "singleton" } });
+  return {
+    defaultProvider: config?.defaultProvider || process.env.AI_PROVIDER || "mock",
+    openaiApiKey: config?.openaiApiKey || process.env.OPENAI_API_KEY || null,
+    // ... demais campos
+  };
 }
 ```
+
+### AIProviderFactory (Multi-Provider)
+
+```typescript
+function getAvailableProviders(settings: AISettings): string[] {
+  // Retorna providers cujas API keys estão configuradas (mock sempre disponível)
+}
+
+function getAIProvider(settings: AISettings, provider?: string): AIProvider {
+  const selected = provider || settings.defaultProvider;
+  // Instancia provider com apiKey e model do settings
+}
+```
+
+### Seleção de Provider via UI
+
+- Endpoint `GET /api/ai/providers` retorna lista de providers disponíveis + default
+- Componente `AISummary` exibe dropdown para seleção do provider
+- `POST /api/ai/summarize` aceita parâmetro `provider` no body para override do default
+- Quando um provider explícito é selecionado, o cache não é verificado (permite comparação entre providers)
+
+### Painel de Configuração (`/settings`)
+
+- Página dedicada para gerenciar providers de IA sem editar `.env` ou fazer redeploy
+- `GET /api/settings` retorna config com API keys mascaradas (nunca expostas completas)
+- `PUT /api/settings` faz upsert na tabela `AIConfig` (singleton)
+- Se API key vier mascarada (inalterada), não sobrescreve o valor real
+- Permite configurar: provider padrão, API keys, modelos, cache TTL
 
 ### Caching
 
 - Cache em tabela `AICache` (Postgres via Prisma)
-- TTL de 1 hora (configurável via `AI_CACHE_TTL_MS` env)
+- TTL de 1 hora por default (configurável via UI em `/settings` ou env var `AI_CACHE_TTL_MS`)
+- Prioridade de resolução do TTL: DB (settings) > env var > default (3600000ms)
 - Cache invalidado quando ticket é editado (title ou description mudam)
 - Request com `ticketId` verifica cache antes de chamar provider
 - Request sem `ticketId` (title + description direto) não usa cache
@@ -290,8 +336,10 @@ function getAIProvider(): AIProvider {
 - `POST /api/tickets` — criar
 - `PATCH /api/tickets/:id` — editar
 - `POST /api/ai/summarize` — gerar resumo
+- `GET/PUT /api/settings` — configuração de IA
 - `/tickets/new` — página de criação
 - `/tickets/[id]/edit` — página de edição
+- `/settings` — painel de configuração de IA
 
 **Rotas públicas:**
 - `GET /api/tickets` — listar

@@ -1,32 +1,42 @@
 import type { AIProvider } from "./types";
+import type { AISettings } from "./settings";
 import { MockAIProvider } from "./mock-provider";
 import { OpenAIProvider } from "./openai-provider";
 import { AnthropicProvider } from "./anthropic-provider";
 import { GeminiProvider } from "./gemini-provider";
 
-const PROVIDER_KEY_MAP: Record<string, string | null> = {
-  mock: null,
-  openai: "OPENAI_API_KEY",
-  anthropic: "ANTHROPIC_API_KEY",
-  gemini: "GEMINI_API_KEY",
-};
+export function getAvailableProviders(settings: AISettings): string[] {
+  const providers: string[] = ["mock"];
 
-export function getAvailableProviders(): string[] {
-  return Object.entries(PROVIDER_KEY_MAP)
-    .filter(([, envVar]) => envVar === null || !!process.env[envVar])
-    .map(([name]) => name);
+  if (settings.openaiApiKey) providers.push("openai");
+  if (settings.anthropicApiKey) providers.push("anthropic");
+  if (settings.geminiApiKey) providers.push("gemini");
+
+  return providers;
 }
 
-export function getAIProvider(provider?: string): AIProvider {
-  const selected = provider || process.env.AI_PROVIDER;
+export function getAIProvider(
+  settings: AISettings,
+  provider?: string,
+): AIProvider {
+  const selected = provider || settings.defaultProvider;
 
   switch (selected) {
     case "openai":
-      return new OpenAIProvider();
+      return new OpenAIProvider({
+        apiKey: settings.openaiApiKey || "",
+        model: settings.openaiModel,
+      });
     case "anthropic":
-      return new AnthropicProvider();
+      return new AnthropicProvider({
+        apiKey: settings.anthropicApiKey || "",
+        model: settings.anthropicModel,
+      });
     case "gemini":
-      return new GeminiProvider();
+      return new GeminiProvider({
+        apiKey: settings.geminiApiKey || "",
+        model: settings.geminiModel,
+      });
     default:
       return new MockAIProvider();
   }

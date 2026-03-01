@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAvailableProviders } from "@/lib/ai/factory";
+import { getAISettings } from "@/lib/ai/settings";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -9,8 +10,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const providers = getAvailableProviders();
-  const defaultProvider = process.env.AI_PROVIDER || "mock";
+  const settings = await getAISettings();
+  const providers = getAvailableProviders(settings);
 
-  return NextResponse.json({ providers, default: defaultProvider });
+  return NextResponse.json({
+    providers,
+    default: settings.defaultProvider,
+  });
 }

@@ -3,12 +3,12 @@ import type { AIProvider, AIStreamChunk } from "./types";
 import { SYSTEM_PROMPT, buildUserPrompt, parseAIResult } from "./prompt";
 
 export class GeminiProvider implements AIProvider {
-  private model: string;
+  private modelName: string;
   private apiKey: string;
 
-  constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY || "";
-    this.model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  constructor({ apiKey, model }: { apiKey: string; model: string }) {
+    this.apiKey = apiKey;
+    this.modelName = model;
   }
 
   async *generateSummary(input: {
@@ -17,7 +17,7 @@ export class GeminiProvider implements AIProvider {
   }): AsyncGenerator<AIStreamChunk> {
     const genAI = new GoogleGenerativeAI(this.apiKey);
     const model = genAI.getGenerativeModel({
-      model: this.model,
+      model: this.modelName,
       systemInstruction: SYSTEM_PROMPT,
     });
 

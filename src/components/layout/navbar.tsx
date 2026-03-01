@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
@@ -36,6 +36,16 @@ export function Navbar() {
               </span>
             </div>
             <div className="h-4 w-px bg-border hidden sm:block" />
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground gap-1.5 px-2"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline text-xs">Config</span>
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="sm"

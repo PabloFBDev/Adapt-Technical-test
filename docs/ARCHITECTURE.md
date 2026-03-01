@@ -12,7 +12,8 @@
 | UI        | Tailwind CSS + shadcn/ui       | Exigido. Componentes acessíveis, estilo Linear/Vercel.                             |
 | Validação | Zod                            | Exigido. Schemas compartilhados entre front e back.                                |
 | Testes    | Vitest + React Testing Library | Rápido, ESM nativo, integração natural com Next.js e TypeScript.                   |
-| IA        | MockAIProvider (plugável)      | Interface abstrata, mock como default, real como plug-in futuro.                   |
+| IA        | Multi-provider (plugável)      | OpenAI, Anthropic, Gemini + Mock. Seleção via UI ou env var.                       |
+| Config IA | Painel de settings na UI       | API keys, modelos e provider padrão gerenciados via banco (sem redeploy).          |
 
 ---
 
@@ -38,15 +39,21 @@ ops-copilot/
 │   │   │       ├── page.tsx       # Detalhe do ticket
 │   │   │       └── edit/
 │   │   │           └── page.tsx   # Editar ticket
+│   │   ├── settings/
+│   │   │   └── page.tsx           # Painel de configuração de IA
 │   │   └── api/
 │   │       ├── auth/
 │   │       │   └── [...nextauth]/
 │   │       │       └── route.ts   # NextAuth handler
+│   │       ├── settings/
+│   │       │   └── route.ts       # GET (config mascarada) + PUT (upsert config)
 │   │       ├── tickets/
 │   │       │   ├── route.ts       # GET (list) + POST (create)
 │   │       │   └── [id]/
 │   │       │       └── route.ts   # GET (detail) + PATCH (update)
 │   │       └── ai/
+│   │           ├── providers/
+│   │           │   └── route.ts   # GET (lista providers disponíveis)
 │   │           └── summarize/
 │   │               └── route.ts   # POST (summarize com SSE)
 │   ├── components/
@@ -71,10 +78,15 @@ ops-copilot/
 │   │   ├── prisma.ts              # Prisma client singleton
 │   │   ├── auth.ts                # NextAuth config
 │   │   ├── ai/
-│   │   │   ├── types.ts           # AIProvider interface, AIResult, AIStreamChunk
-│   │   │   ├── mock-provider.ts   # MockAIProvider
-│   │   │   ├── factory.ts         # getAIProvider()
-│   │   │   └── cache.ts           # Lógica de cache (get/set/invalidate)
+│   │   │   ├── types.ts              # AIProvider interface, AIResult, AIStreamChunk
+│   │   │   ├── mock-provider.ts      # MockAIProvider (fallback sem API key)
+│   │   │   ├── openai-provider.ts    # OpenAIProvider (gpt-4o-mini)
+│   │   │   ├── anthropic-provider.ts # AnthropicProvider (claude-haiku-4-5)
+│   │   │   ├── gemini-provider.ts    # GeminiProvider (gemini-2.0-flash)
+│   │   │   ├── prompt.ts            # System prompt + parser de resultado
+│   │   │   ├── settings.ts         # getAISettings() + maskApiKey() — resolve config DB > env > default
+│   │   │   ├── factory.ts           # getAIProvider(settings) + getAvailableProviders(settings)
+│   │   │   └── cache.ts             # Lógica de cache (get/set/invalidate) com TTL dinâmico
 │   │   └── utils.ts               # Helpers genéricos
 │   ├── schemas/
 │   │   ├── ticket.ts              # Zod schemas para Ticket (create, update, query)
@@ -179,6 +191,19 @@ enum TicketPriority {
   high
 }
 
+model AIConfig {
+  id              String   @id @default("singleton")
+  defaultProvider String   @default("mock")
+  openaiApiKey    String?
+  openaiModel     String?
+  anthropicApiKey String?
+  anthropicModel  String?
+  geminiApiKey    String?
+  geminiModel     String?
+  cacheTtlMs      Int      @default(3600000)
+  updatedAt       DateTime @updatedAt
+}
+
 enum AuditAction {
   created
   updated
@@ -258,21 +283,49 @@ export class MockAIProvider implements AIProvider {
 }
 ```
 
-### Factory
+### Settings (Configuração Dinâmica)
+
+```typescript
+// src/lib/ai/settings.ts
+
+export async function getAISettings(): Promise<AISettings> {
+  const config = await prisma.aIConfig.findUnique({ where: { id: "singleton" } });
+  return {
+    defaultProvider: config?.defaultProvider || process.env.AI_PROVIDER || "mock",
+    openaiApiKey: config?.openaiApiKey || process.env.OPENAI_API_KEY || null,
+    // ... demais campos com mesmo padrão: DB > env var > default
+  };
+}
+```
+
+A resolução segue a prioridade **DB > env var > default**. Isso permite que o admin configure via UI sem tocar em env vars.
+
+### Factory (Multi-Provider)
 
 ```typescript
 // src/lib/ai/factory.ts
 
-export function getAIProvider(): AIProvider {
-  const provider = process.env.AI_PROVIDER;
+export function getAvailableProviders(settings: AISettings): string[] {
+  // Retorna providers cujas API keys estão configuradas (via DB ou env)
+  // Mock está sempre disponível
+}
 
-  switch (provider) {
-    // Futuros providers: case "openai": return new OpenAIProvider();
-    default:
-      return new MockAIProvider();
-  }
+export function getAIProvider(settings: AISettings, provider?: string): AIProvider {
+  const selected = provider || settings.defaultProvider;
+  // Instancia provider com apiKey e model do settings
 }
 ```
+
+### Seleção via UI
+
+O componente `AISummary` busca `GET /api/ai/providers` para listar providers disponíveis. Um dropdown permite ao usuário escolher qual provider usar. O provider selecionado é enviado no body do `POST /api/ai/summarize` como parâmetro `provider`.
+
+### Painel de Configuração (`/settings`)
+
+Página dedicada para gerenciar a integração de IA sem editar `.env` ou fazer redeploy:
+- Provider padrão, API keys (mascaradas na exibição), modelos e cache TTL
+- Salva no banco via `PUT /api/settings` (upsert na tabela `AIConfig`)
+- API keys mascaradas no `GET /api/settings` (nunca expostas completas)
 
 ---
 
@@ -327,14 +380,14 @@ export const authOptions: NextAuthOptions = {
 ```typescript
 // src/middleware.ts
 
-export { default } from "next-auth/middleware";
-
 export const config = {
   matcher: [
     "/tickets/new",
     "/tickets/:path*/edit",
-    "/api/tickets/:path*", // POST e PATCH
+    "/settings",
+    "/api/tickets/:path*",
     "/api/ai/:path*",
+    "/api/settings",
   ],
 };
 ```
@@ -357,13 +410,16 @@ export async function POST(request: Request) {
 
 ### Endpoints
 
-| Método | Rota              | Auth      | Descrição                 |
-| ------ | ----------------- | --------- | ------------------------- |
-| GET    | /api/tickets      | Público   | Listar tickets (paginado) |
-| POST   | /api/tickets      | Protegido | Criar ticket              |
-| GET    | /api/tickets/:id  | Público   | Detalhe do ticket         |
-| PATCH  | /api/tickets/:id  | Protegido | Atualizar ticket          |
-| POST   | /api/ai/summarize | Protegido | Gerar resumo IA (SSE)     |
+| Método | Rota               | Auth      | Descrição                            |
+| ------ | ------------------ | --------- | ------------------------------------ |
+| GET    | /api/tickets       | Público   | Listar tickets (paginado)            |
+| POST   | /api/tickets       | Protegido | Criar ticket                         |
+| GET    | /api/tickets/:id   | Público   | Detalhe do ticket                    |
+| PATCH  | /api/tickets/:id   | Protegido | Atualizar ticket                     |
+| GET    | /api/ai/providers  | Protegido | Listar providers de IA disponíveis   |
+| POST   | /api/ai/summarize  | Protegido | Gerar resumo IA (SSE)                |
+| GET    | /api/settings      | Protegido | Config de IA (keys mascaradas)       |
+| PUT    | /api/settings      | Protegido | Atualizar config de IA (upsert)      |
 
 ### Padrão de Resposta
 
@@ -423,6 +479,18 @@ export const ticketQuerySchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "priority"]).default("createdAt"),
   order: z.enum(["asc", "desc"]).default("desc"),
+});
+
+// src/schemas/ai.ts — configuração de IA
+export const aiConfigSchema = z.object({
+  defaultProvider: z.enum(["mock", "openai", "anthropic", "gemini"]).optional(),
+  openaiApiKey: z.string().optional().nullable(),
+  openaiModel: z.string().max(100).optional().nullable(),
+  anthropicApiKey: z.string().optional().nullable(),
+  anthropicModel: z.string().max(100).optional().nullable(),
+  geminiApiKey: z.string().optional().nullable(),
+  geminiModel: z.string().max(100).optional().nullable(),
+  cacheTtlMs: z.number().int().min(0).max(86400000).optional(),
 });
 ```
 
@@ -524,12 +592,17 @@ graph TB
     subgraph Server ["Backend (Next.js Route Handlers)"]
         API_Tickets["API /api/tickets<br/>GET, POST, PATCH"]
         API_AI["API /api/ai/summarize<br/>POST (SSE)"]
+        API_Settings["API /api/settings<br/>GET, PUT"]
         API_Auth["API /api/auth<br/>NextAuth"]
     end
 
     subgraph Services ["Services"]
+        AISettings["AISettings<br/>DB > env > default"]
         AIFactory["AIProviderFactory"]
         MockAI["MockAIProvider"]
+        OpenAI["OpenAIProvider"]
+        Anthropic["AnthropicProvider"]
+        Gemini["GeminiProvider"]
         Cache["AICache"]
         Audit["AuditLog Service"]
     end
@@ -546,9 +619,15 @@ graph TB
 
     API_Tickets --> Prisma
     API_Tickets --> Audit
-    API_AI --> AIFactory
+    API_AI --> AISettings
     API_AI --> Cache
+    API_Settings --> AISettings
+    API_Settings --> Prisma
+    AISettings --> AIFactory
     AIFactory --> MockAI
+    AIFactory --> OpenAI
+    AIFactory --> Anthropic
+    AIFactory --> Gemini
     Audit --> Prisma
     Cache --> Prisma
     Prisma --> Supabase

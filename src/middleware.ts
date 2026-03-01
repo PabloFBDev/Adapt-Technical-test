@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 const RATE_LIMITS: Record<string, { limit: number; windowSeconds: number }> = {
   "/api/auth": { limit: 10, windowSeconds: 60 },
   "/api/ai": { limit: 20, windowSeconds: 60 },
+  "/api/settings": { limit: 20, windowSeconds: 60 },
   "/api/tickets": { limit: 60, windowSeconds: 60 },
 };
 
@@ -103,7 +104,9 @@ export const config = {
   matcher: [
     "/tickets/new",
     "/tickets/:path*/edit",
+    "/settings",
     "/api/tickets/:path*",
     "/api/ai/:path*",
+    "/api/settings",
   ],
 };

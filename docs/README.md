@@ -13,22 +13,22 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 ## Arquitetura
 
 ```
-┌─────────────────────────────────────────────┐
-│            Frontend (Next.js App Router)     │
-│  Pages • Components • Middleware (Auth)      │
-└──────────────────┬──────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              Frontend (Next.js App Router)       │
+│  Pages • Components • Settings UI • Middleware   │
+└──────────────────┬──────────────────────────────┘
                    │
-┌──────────────────▼──────────────────────────┐
-│         Backend (Next.js Route Handlers)     │
-│  /api/tickets • /api/ai/summarize • NextAuth │
-└──────┬────────────────┬─────────────────────┘
+┌──────────────────▼──────────────────────────────┐
+│           Backend (Next.js Route Handlers)       │
+│  /api/tickets • /api/ai/* • /api/settings • Auth │
+└──────┬────────────────┬─────────────────────────┘
        │                │
-┌──────▼──────┐  ┌──────▼──────────────┐
-│  Prisma ORM │  │  AI Provider Layer   │
-│             │  │  Factory → Mock/Real │
-└──────┬──────┘  │  + Cache (Postgres)  │
-       │         └─────────────────────┘
-┌──────▼──────┐
+┌──────▼──────┐  ┌──────▼──────────────────┐
+│  Prisma ORM │  │  AI Provider Layer       │
+│             │  │  Settings → Factory →    │
+└──────┬──────┘  │  Mock/OpenAI/Anthropic/  │
+       │         │  Gemini + Cache (PG)     │
+┌──────▼──────┐  └─────────────────────────┘
 │  Supabase   │
 │  (Postgres) │
 └─────────────┘
@@ -47,7 +47,8 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 | UI | Tailwind + shadcn/ui | Componentes acessíveis, estilo clean. |
 | Validação | Zod | Schemas compartilhados front/back, type inference. |
 | Testes | Vitest | ESM nativo, rápido, integração natural com TypeScript. |
-| IA | MockAIProvider (plugável) | Interface abstrata; mock funciona sem API key. |
+| IA | Multi-provider (plugável) | OpenAI, Anthropic, Gemini + Mock. Seleção via UI ou env var. |
+| Config IA | Painel de settings na UI | API keys, modelos e provider padrão gerenciados via banco (sem redeploy). |
 | Streaming | SSE (Server-Sent Events) | Nativo do browser, sem websocket, boa DX. |
 
 ---
@@ -106,19 +107,45 @@ npm run test:coverage
 npx vitest run __tests__/lib/ai/mock-provider.test.ts
 ```
 
-### O que é testado
+### O que é testado (62 testes)
 
-- **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, factory resolve provider
-- **Schemas Zod:** Validação de criação/edição de ticket, query params, input do summarize
-- **Route Handlers:** Contratos da API (status codes, formato de resposta, validação de input)
+- **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, factory resolve provider com settings
+- **AI Cache:** get/set/invalidate, TTL expiry, TTL dinamico via settings
+- **Schemas Zod:** Validacao de criacao/edicao de ticket, query params, input do summarize, config de IA
+- **Route Handlers:** Contratos da API (status codes, formato de resposta, validacao de input, auditoria)
 
 ---
 
-## Como Usar IA / Fallback
+## Como Usar IA
 
-### Comportamento padrão (sem API key)
+### Providers disponíveis
 
-O sistema usa `MockAIProvider` automaticamente. O mock:
+O sistema suporta **4 providers de IA**, selecionáveis via UI ou variável de ambiente:
+
+| Provider   | Modelo padrão              | Variável de ambiente |
+| ---------- | -------------------------- | -------------------- |
+| Mock       | — (determinístico)         | —                    |
+| OpenAI     | `gpt-4o-mini`              | `OPENAI_API_KEY`     |
+| Anthropic  | `claude-haiku-4-5-20251001`| `ANTHROPIC_API_KEY`  |
+| Gemini     | `gemini-2.0-flash`         | `GEMINI_API_KEY`     |
+
+### Selecao de provider via UI
+
+Na pagina de detalhe do ticket, um **seletor dropdown** permite escolher qual provider usar para gerar o resumo. O seletor exibe apenas providers cujas API keys estao configuradas. O Mock esta sempre disponivel.
+
+### Painel de Configuracao (`/settings`)
+
+A pagina de configuracoes permite gerenciar toda a integracao de IA **sem editar `.env` ou fazer redeploy**:
+
+- **Provider padrao**: selecionar qual provider usar por padrao
+- **API keys**: inserir, atualizar ou remover API keys (mascaradas na exibicao)
+- **Modelos**: configurar qual modelo usar em cada provider
+- **Cache TTL**: ajustar tempo de cache dos resultados de IA
+- Persistencia em Postgres (tabela `AIConfig`), com fallback para env vars
+
+### Comportamento padrao (sem API key)
+
+Sem nenhuma API key configurada (nem no banco nem no `.env`), o sistema usa `MockAIProvider` automaticamente. O mock:
 
 - Retorna dados determinísticos baseados em keywords do ticket
 - Simula streaming com delay de 50–100ms por chunk
@@ -126,28 +153,21 @@ O sistema usa `MockAIProvider` automaticamente. O mock:
 - Classifica como `low` se contém "feature" ou "request"
 - Funciona sem configuração adicional
 
-### Usando um provider real (futuro)
+### Configurando providers reais
 
-Para usar um provider real, basta:
+Ha **duas formas** de configurar providers reais:
 
-1. Implementar a interface `AIProvider`:
-```typescript
-export class OpenAIProvider implements AIProvider {
-  async *generateSummary(input) {
-    // Chamar OpenAI API e emitir chunks
-  }
-}
+**1. Via UI (recomendado):** Acesse `/settings` e insira as API keys diretamente. As configuracoes persistem no banco entre deploys.
+
+**2. Via env vars (fallback):** Adicione as API keys no `.env`:
+
+```bash
+OPENAI_API_KEY="sk-..."
+ANTHROPIC_API_KEY="sk-ant-..."
+GEMINI_API_KEY="..."
 ```
 
-2. Registrar no factory (`src/lib/ai/factory.ts`)
-
-3. Configurar no `.env`:
-```
-AI_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-```
-
-O sistema faz fallback automático para `MockAIProvider` se o provider configurado falhar ou se a API key não estiver definida.
+**Prioridade:** Banco (settings UI) > env var > default.
 
 ---
 
@@ -184,6 +204,8 @@ O sistema faz fallback automático para `MockAIProvider` se o provider configura
 
 ```bash
 # .env.example
+# Nota: API keys, modelos e provider padrao tambem podem ser configurados via UI em /settings.
+# Configuracoes do banco tem prioridade sobre env vars.
 
 # Supabase / Postgres
 DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres"
@@ -192,12 +214,18 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/pos
 NEXTAUTH_SECRET="gere-uma-string-aleatoria-aqui"
 NEXTAUTH_URL="http://localhost:3000"
 
-# IA (opcional — sem isso, usa MockAIProvider)
+# IA — Provider padrao (opcional — configuravel via UI em /settings)
 AI_PROVIDER="mock"
-# OPENAI_API_KEY="sk-..."
-# ANTHROPIC_API_KEY="sk-ant-..."
 
-# Cache de IA
+# API Keys dos providers (opcional — tambem configuravel via UI em /settings)
+# OPENAI_API_KEY="sk-..."
+# OPENAI_MODEL="gpt-4o-mini"
+# ANTHROPIC_API_KEY="sk-ant-..."
+# ANTHROPIC_MODEL="claude-haiku-4-5-20251001"
+# GEMINI_API_KEY="..."
+# GEMINI_MODEL="gemini-2.0-flash"
+
+# Cache de IA (tambem configuravel via UI)
 AI_CACHE_TTL_MS="3600000"  # 1 hora em ms
 ```
 

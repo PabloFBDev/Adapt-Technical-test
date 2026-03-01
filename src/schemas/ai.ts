@@ -15,3 +15,18 @@ export const summarizeSchema = z.union([
 ]);
 
 export type SummarizeInput = z.infer<typeof summarizeSchema>;
+
+export const aiConfigSchema = z.object({
+  defaultProvider: z
+    .enum(["mock", "openai", "anthropic", "gemini"])
+    .optional(),
+  openaiApiKey: z.string().optional().nullable(),
+  openaiModel: z.string().max(100).optional().nullable(),
+  anthropicApiKey: z.string().optional().nullable(),
+  anthropicModel: z.string().max(100).optional().nullable(),
+  geminiApiKey: z.string().optional().nullable(),
+  geminiModel: z.string().max(100).optional().nullable(),
+  cacheTtlMs: z.number().int().min(0).max(86400000).optional(),
+});
+
+export type AIConfigInput = z.infer<typeof aiConfigSchema>;

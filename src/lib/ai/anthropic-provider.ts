@@ -6,9 +6,9 @@ export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
   private model: string;
 
-  constructor() {
-    this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    this.model = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+  constructor({ apiKey, model }: { apiKey: string; model: string }) {
+    this.client = new Anthropic({ apiKey });
+    this.model = model;
   }
 
   async *generateSummary(input: {

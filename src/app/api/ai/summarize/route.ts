@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { summarizeSchema } from "@/schemas/ai";
 import { getAIProvider } from "@/lib/ai/factory";
+import { getAISettings } from "@/lib/ai/settings";
 import { getCachedResult, setCachedResult } from "@/lib/ai/cache";
 import { handleApiError, NotFoundError } from "@/lib/utils";
 import { NextResponse } from "next/server";
@@ -47,9 +48,11 @@ export async function POST(request: Request) {
       description = input.description;
     }
 
+    const settings = await getAISettings();
+
     // Stream response via SSE
     const encoder = new TextEncoder();
-    const provider = getAIProvider(explicitProvider);
+    const provider = getAIProvider(settings, explicitProvider);
 
     const STREAM_TIMEOUT_MS = 30_000;
 
@@ -72,7 +75,11 @@ export async function POST(request: Request) {
               controller.enqueue(encoder.encode(`data: ${data}\n\n`));
 
               if (chunk.type === "done" && ticketId) {
-                await setCachedResult(ticketId, chunk.result);
+                await setCachedResult(
+                  ticketId,
+                  chunk.result,
+                  settings.cacheTtlMs,
+                );
               }
             }
           };
