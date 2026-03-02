@@ -39,6 +39,31 @@ describe("extractErrorMessage", () => {
     );
   });
 
+  it("should return access denied message for 403 status errors", () => {
+    const err = new Error("Forbidden") as Error & { status: number };
+    err.status = 403;
+    expect(extractErrorMessage(err)).toBe(
+      "Acesso negado. Verifique as permissões da chave de API."
+    );
+  });
+
+  it("should return safety message for content blocked errors", () => {
+    const err = new Error("Content was blocked by safety filter");
+    expect(extractErrorMessage(err)).toBe(
+      "O conteúdo foi bloqueado pelos filtros de segurança do provider."
+    );
+  });
+
+  it("should extract nested JSON message from SDK error bodies", () => {
+    const err = new Error('401 {"type":"error","error":{"message":"invalid x-api-key"}}');
+    expect(extractErrorMessage(err)).toBe("invalid x-api-key");
+  });
+
+  it("should return raw message when no nested JSON is found", () => {
+    const err = new Error("Something went wrong");
+    expect(extractErrorMessage(err)).toBe("Something went wrong");
+  });
+
   it("should return safety message for Gemini SAFETY errors", () => {
     const err = new Error("Response was blocked due to SAFETY");
     expect(extractErrorMessage(err)).toBe(

@@ -2,6 +2,9 @@
 
 Sistema de registro de tarefas e incidentes com geração automática de resumos, próximos passos e análise de risco por IA. Criado como teste técnico Full-Stack TypeScript.
 
+- **Produção:** https://opscopilot.vercel.app/
+- **Repositório:** https://github.com/PabloFBDev/Adapt-Technical-test
+
 ---
 
 ## Visão do Produto
@@ -41,7 +44,7 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 
 | Decisão   | Escolha                   | Motivo                                                            |
 | --------- | ------------------------- | ----------------------------------------------------------------- |
-| Framework | Next.js 14+ (App Router)  | Exigido. RSC, layouts, route handlers integrados.                 |
+| Framework | Next.js 16 (App Router)   | Exigido. RSC, layouts, route handlers integrados.                 |
 | ORM       | Prisma                    | Type-safety, migrations versionadas, boa integração com Postgres. |
 | Banco     | Supabase (Postgres)       | Hosted, sem Docker, connection string simples.                    |
 | Auth      | NextAuth (Credentials)    | JWT strategy, registro público, middleware de proteção.           |
@@ -49,75 +52,58 @@ Ops Copilot permite que equipes de operações registrem tickets de incidentes e
 | Validação | Zod                       | Schemas compartilhados front/back, type inference.                |
 | Testes    | Vitest                    | ESM nativo, rápido, integração natural com TypeScript.            |
 | IA        | Multi-provider (plugável) | OpenAI, Anthropic, Gemini + Mock. Seleção via UI ou env var.      |
-| Config IA | Painel de settings na UI  | API keys, modelos e provider padrão gerenciados via banco (sem redeploy). |
-| Streaming | SSE (Server-Sent Events)  | Nativo do browser, sem websocket, boa DX.                         |
+
+Para tradeoffs detalhados, ver [Decisões Técnicas](docs/DECISOES-TECNICAS.md).
 
 ---
 
 ## Diferenciais Implementados
 
-### 1. Edição e Mudança de Status
+O teste pedia 2+. Implementei 5:
 
-- Endpoint `PATCH /api/tickets/:id` com partial update — qualquer usuário autenticado pode editar qualquer ticket
-- Formulário de edição pré-carregado com valores atuais
-- Mudança de status inline na página de detalhe (dropdown)
+1. **Edição e mudança de status** — PATCH com partial update, dropdown inline de status
+2. **Auditoria de mudanças** — diffs por campo, timeline visual por tipo de ação
+3. **Rate limiting** — sliding window in-memory por IP, 4 tiers, `429` com `Retry-After`
+4. **Streaming SSE com Multi-Provider** — 4 providers, seletor na UI, erros via stream
+5. **Painel de Configuração de IA** — API keys, modelos, cache TTL gerenciados via UI sem redeploy
 
-### 2. Auditoria de Mudanças
-
-- Tabela `AuditLog` com diffs por campo (`{ field: { from, to } }`)
-- Registro automático em criação e edição
-- Timeline de auditoria na página de detalhe do ticket
-
-### 3. Rate Limiting
-
-- Sliding window in-memory por IP com limites por rota (auth: 10/min, AI: 20/min, tickets: 60/min)
-- Retorna `429 Too Many Requests` com header `Retry-After`
-
-### 4. Streaming IA (SSE) com Multi-Provider
-
-- Endpoint retorna `text/event-stream`
-- Suporte a **4 providers**: Mock, OpenAI, Anthropic (Claude) e Google Gemini
-- **Seletor de provider na UI** — o usuario escolhe qual IA usar em tempo real
-- Endpoint `GET /api/ai/providers` retorna providers disponiveis (baseado nas API keys configuradas)
-- UI renderiza resultado progressivamente (summary, nextSteps, riskLevel, categories)
-- Stream reader com `AbortController` — cancela streaming automaticamente ao desmontar componente
-- **Tratamento de erros robusto**: módulo `errors.ts` com `AIProviderError` e `extractErrorMessage` — trata erros de API (401, 429, 403), timeout, filtros de segurança e mensagens aninhadas de SDKs
-- **Utilitários de streaming compartilhados**: módulo `stream-utils.ts` com `chunkText`, `delay` e `simulateStream` — reutilizados entre providers
-
-### 5. Painel de Configuracao de IA
-
-- **Pagina `/settings`** para gerenciar providers de IA sem editar env vars ou fazer redeploy
-- Configuracao de API keys, modelos e provider padrao via UI
-- API keys mascaradas no GET (nunca expostas completas na UI)
-- Persistencia em Postgres (tabela `AIConfig` singleton) com fallback para env vars
-- Cache TTL configuravel via UI
-- Prioridade: DB > env var > default
+Detalhes em [Decisões Técnicas](docs/DECISOES-TECNICAS.md#7-diferenciais) e [Escopo MVP](docs/MVP-SCOPE.md).
 
 ---
 
-## Performance e Escalabilidade
+## IA
 
-### Índices de banco de dados
+O sistema suporta **4 providers**, selecionáveis via dropdown na página de detalhe do ticket:
 
-Índices adicionados para todas as colunas usadas em WHERE/ORDER BY/JOIN:
-- `Ticket`: `status`, `priority`, `createdAt`, `userId`
-- `AuditLog`: composto `[ticketId, createdAt]`, `userId`
+| Provider  | Modelo padrão               | API Key necessária  |
+| --------- | --------------------------- | ------------------- |
+| Mock      | — (determinístico)          | Nenhuma             |
+| OpenAI    | `gpt-4o-mini`               | `OPENAI_API_KEY`    |
+| Anthropic | `claude-haiku-4-5-20251001` | `ANTHROPIC_API_KEY` |
+| Gemini    | `gemini-2.0-flash`          | `GEMINI_API_KEY`    |
 
-### AbortController em todos os fetches
+**Sem API key configurada**, o sistema usa `MockAIProvider` automaticamente — retorna dados determinísticos baseados em keywords do ticket, simulando streaming com delay.
 
-Todos os componentes client-side usam `AbortController` com cleanup no unmount — previne race conditions, memory leaks e dados stale quando o usuário navega rapidamente ou muda filtros.
+**API keys podem ser configuradas de duas formas:**
 
-### Cache in-memory para AISettings
+1. **Via UI (recomendado):** Acesse `/settings` — salva no banco, persiste entre deploys
+2. **Via `.env` (fallback):** Adicione as keys no arquivo de ambiente
 
-`getAISettings()` usa cache com TTL de 5 minutos, invalidado automaticamente ao salvar configurações via `/settings`.
+Prioridade de resolução: **DB > env var > default**.
 
-### Paginação de audit logs
+Para detalhes da arquitetura multi-provider, ver [Arquitetura](docs/ARCHITECTURE.md#padrão-aiprovider).
 
-Queries de audit logs limitadas a 20 registros mais recentes para evitar payloads ilimitados em tickets com muitas edições.
+---
 
-### React.memo no TicketCard
+## Documentação
 
-Componente memoizado para evitar re-renders desnecessários durante paginação e mudanças de loading state.
+| Documento                                             | Conteúdo                                                                                                         |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [Decisões Técnicas](docs/DECISOES-TECNICAS.md)        | Tradeoffs de cada escolha técnica: stack, arquitetura, IA, segurança, diferenciais e auditoria pós-implementação |
+| [Arquitetura](docs/ARCHITECTURE.md)                   | Design do sistema, modelagem de dados, fluxos de autenticação e streaming SSE                                    |
+| [PRD](docs/PRD.md)                                    | Requisitos do produto, schemas, user stories, edge cases e critérios de aceitação                                |
+| [Escopo MVP](docs/MVP-SCOPE.md)                       | O que entrou (must have), diferenciais escolhidos (should have) e o que ficou de fora (won't have)               |
+| [Plano de Implementação](docs/IMPLEMENTATION-PLAN.md) | Ordem de execução em 11 fases, do scaffolding ao polimento final                                                 |
 
 ---
 
@@ -166,6 +152,8 @@ Acesse `http://localhost:3000/register` e crie sua própria conta. Após o regis
 - Email: `admin@opscopilot.com`
 - Senha: `password123`
 
+> **Nota:** O seed já inclui incidentes de exemplo pré-carregados para facilitar a visualização do sistema. Você também pode criar e editar novos incidentes normalmente.
+
 ---
 
 ## Como Rodar Testes
@@ -181,122 +169,19 @@ npm run test:coverage
 npx vitest run __tests__/lib/ai/mock-provider.test.ts
 ```
 
-### O que é testado (79 testes, 9 arquivos)
-
-- **AIProvider:** MockAIProvider retorna AIResult válido, streaming emite chunks corretos, keyword-based classification, factory resolve provider com settings
-- **AI Errors:** `AIProviderError`, `extractErrorMessage` — tratamento de erros de API (401, 429, 403), timeout, filtros de segurança
-- **AI Stream Utils:** `chunkText`, `delay`, `simulateStream` — utilitários compartilhados de streaming
-- **AI Cache:** get/set/invalidate, TTL expiry, TTL dinamico via settings
-- **Schemas Zod:** Validacao de criacao/edicao de ticket, query params, input do summarize, config de IA
-- **Route Handlers:** Contratos da API (status codes, formato de resposta, validacao de input, auditoria)
-
----
-
-## Como Usar IA
-
-### Providers disponíveis
-
-O sistema suporta **4 providers de IA**, selecionáveis via UI ou variável de ambiente:
-
-| Provider   | Modelo padrão              | Variável de ambiente |
-| ---------- | -------------------------- | -------------------- |
-| Mock       | — (determinístico)         | —                    |
-| OpenAI     | `gpt-4o-mini`              | `OPENAI_API_KEY`     |
-| Anthropic  | `claude-haiku-4-5-20251001`| `ANTHROPIC_API_KEY`  |
-| Gemini     | `gemini-2.0-flash`         | `GEMINI_API_KEY`     |
-
-### Selecao de provider via UI
-
-Na pagina de detalhe do ticket, um **seletor dropdown** permite escolher qual provider usar para gerar o resumo. O seletor exibe apenas providers cujas API keys estao configuradas. O Mock esta sempre disponivel.
-
-### Painel de Configuracao (`/settings`)
-
-A pagina de configuracoes permite gerenciar toda a integracao de IA **sem editar `.env` ou fazer redeploy**:
-
-- **Provider padrao**: selecionar qual provider usar por padrao (mock/openai/anthropic/gemini)
-- **API keys**: inserir, atualizar ou remover API keys de cada provider (mascaradas na exibicao)
-- **Modelos**: configurar qual modelo usar em cada provider
-- **Cache TTL**: ajustar tempo de cache dos resultados de IA
-
-As configuracoes sao salvas em Postgres (tabela `AIConfig`) e tem prioridade sobre env vars. Se nada estiver configurado no banco, o sistema usa env vars como fallback.
-
-### Comportamento padrao (sem API key)
-
-Sem nenhuma API key configurada (nem no banco nem no `.env`), o sistema usa `MockAIProvider` automaticamente. O mock:
-
-- Retorna dados determinísticos baseados em keywords do ticket
-- Simula streaming com delay de 50-100ms por chunk
-- Classifica risco como `high` se o título contém "bug" ou "error"
-- Classifica como `low` se contém "feature" ou "request"
-- Funciona sem configuração adicional
-
-### Configurando providers reais
-
-Ha **duas formas** de configurar providers reais:
-
-**1. Via UI (recomendado):** Acesse `/settings` e insira as API keys diretamente. As configuracoes sao salvas no banco e persistem entre deploys.
-
-**2. Via env vars (fallback):** Adicione as API keys no `.env`:
-
-```bash
-OPENAI_API_KEY="sk-..."
-ANTHROPIC_API_KEY="sk-ant-..."
-GEMINI_API_KEY="..."
-```
-
-**Prioridade de resolucao:** Banco (settings UI) > env var > default. O sistema faz fallback automatico para `MockAIProvider` se nenhuma API key estiver definida.
-
-### Arquitetura multi-provider
-
-A interface `AIProvider` define o contrato. Cada provider implementa `generateSummary()` como `AsyncGenerator`. O streaming suporta chunks de conteúdo e eventos de erro (`AIStreamChunk` com tipo `"error"`):
-
-```
-Settings (getAISettings) → resolve config do DB ou env vars
-Factory (getAIProvider)  → recebe settings, seleciona provider
-                         → OpenAIProvider | AnthropicProvider | GeminiProvider | MockAIProvider
-Errors (errors.ts)       → AIProviderError + extractErrorMessage (tratamento unificado)
-Stream Utils             → chunkText, delay, simulateStream (utilitários compartilhados)
-
-GET  /api/ai/providers   → retorna lista de providers disponiveis + default
-POST /api/ai/summarize   → aceita parametro "provider" para override do default
-GET  /api/settings       → retorna config com API keys mascaradas
-PUT  /api/settings       → atualiza config (upsert no banco)
-```
+Prisma é mockado via `vi.mock` — testes não tocam banco real e são rápidos e isolados.
 
 ---
 
 ## Uso de IA no Desenvolvimento
 
-### Ferramentas utilizadas
-
-- **Claude (Anthropic):** Geração da especificação técnica (PRD, ARCHITECTURE, MVP-SCOPE), definição de schemas, estrutura de pastas e padrões de código.
-
-### Onde ajudou
-
-- Definição de escopo e priorização de diferenciais
-- Estruturação da arquitetura (AIProvider pattern, caching, auditoria)
-- Schemas Zod e interfaces TypeScript
-- Geração de boilerplate (NextAuth config, Prisma schema, middleware)
-- Documentação (este README, decisões técnicas)
-
-### Revisão manual e tradeoffs
-
-- Todo código gerado por IA foi revisado e adaptado ao contexto do projeto
-- Decisões de arquitetura foram validadas contra os requisitos do teste
-- Nomes, estrutura de pastas e convenções foram ajustados para consistência
-- Testes foram escritos/revisados para garantir que testam o comportamento real, não apenas o formato
-
-### Tradeoffs
-
-- IA acelera boilerplate mas pode gerar padrões genéricos — cada trecho foi avaliado
-- Schemas e types foram a parte que mais se beneficiou de IA (repetitivo, propenso a erros)
-- Lógica de negócio (auditoria, streaming, caching) foi onde mais houve intervenção manual
+O Claude Code (CLI da Anthropic) foi usado como ferramenta de apoio durante todo o projeto, desde o Product Discovery até a implementação. Todo código gerado foi revisado e adaptado manualmente quando necessário. Detalhes completos sobre onde ajudou, revisão manual e tradeoffs estão em [`docs/DECISOES-TECNICAS.md` - seção 9](docs/DECISOES-TECNICAS.md#9-ferramentas-de-desenvolvimento).
 
 ---
 
-## Variaveis de Ambiente
+## Variáveis de Ambiente
 
-> **Nota:** API keys, modelos e provider padrao tambem podem ser configurados via UI em `/settings`. As configuracoes do banco tem prioridade sobre env vars.
+> **Nota:** API keys, modelos e provider padrão também podem ser configurados via UI em `/settings`. As configurações do banco têm prioridade sobre env vars.
 
 ```bash
 # Supabase / Postgres
@@ -306,12 +191,11 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/pos
 NEXTAUTH_SECRET="gere-uma-string-aleatoria-aqui"
 NEXTAUTH_URL="http://localhost:3000"
 
-# IA — Provider padrao (opcional — sem isso, usa MockAIProvider)
-# Valores validos: "mock" | "openai" | "anthropic" | "gemini"
-# Pode ser configurado via UI em /settings (prioridade: DB > env var > default)
+# IA — Provider padrão (opcional — sem isso, usa MockAIProvider)
+# Valores válidos: "mock" | "openai" | "anthropic" | "gemini"
 AI_PROVIDER="mock"
 
-# API Keys dos providers (opcional — tambem configuravel via UI em /settings)
+# API Keys dos providers (opcional — também configurável via UI em /settings)
 # OPENAI_API_KEY="sk-..."
 # OPENAI_MODEL="gpt-4o-mini"
 # ANTHROPIC_API_KEY="sk-ant-..."
@@ -319,7 +203,7 @@ AI_PROVIDER="mock"
 # GEMINI_API_KEY="..."
 # GEMINI_MODEL="gemini-2.0-flash"
 
-# Cache de IA (tambem configuravel via UI)
+# Cache de IA (também configurável via UI)
 AI_CACHE_TTL_MS="3600000"  # 1 hora em ms
 ```
 

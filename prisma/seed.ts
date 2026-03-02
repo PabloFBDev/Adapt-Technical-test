@@ -28,41 +28,41 @@ async function main() {
 
   const ticketsData = [
     {
-      title: "Server returning 500 error on /api/users",
+      title: "Servidor retornando erro 500 em /api/users",
       description:
-        "The /api/users endpoint started returning 500 Internal Server Error after the last deployment. Users are unable to load their profiles. The error appears intermittently and affects approximately 30% of requests. Logs show a database connection timeout.",
+        "O endpoint /api/users começou a retornar erro 500 (Internal Server Error) após o último deploy. Os usuários não conseguem carregar seus perfis. O erro ocorre de forma intermitente e afeta aproximadamente 30% das requisições. Os logs indicam timeout na conexão com o banco de dados.",
       priority: "high" as const,
       status: "open" as const,
-      tags: ["bug", "api", "urgent"],
+      tags: ["bug", "api", "urgente"],
     },
     {
-      title: "Add dark mode support to dashboard",
+      title: "Adicionar suporte a modo escuro no dashboard",
       description:
-        "Users have requested dark mode support for the main dashboard. This should follow the system preference by default but also allow manual toggle. All components need to be updated with appropriate color tokens. Consider using CSS custom properties for easy theming.",
+        "Os usuários solicitaram suporte a modo escuro no dashboard principal. O sistema deve seguir a preferência do sistema operacional por padrão, mas também permitir alternância manual. Todos os componentes precisam ser atualizados com tokens de cor apropriados. Considere usar propriedades customizadas de CSS para facilitar a tematização.",
       priority: "medium" as const,
       status: "in_progress" as const,
       tags: ["feature", "ui", "dashboard"],
     },
     {
-      title: "Optimize database queries for ticket listing",
+      title: "Otimizar consultas ao banco para listagem de tickets",
       description:
-        "The ticket listing page is taking over 2 seconds to load when there are more than 500 tickets. We need to add proper indexes and optimize the query to use pagination efficiently. Consider adding a composite index on status + createdAt.",
+        "A página de listagem de tickets está levando mais de 2 segundos para carregar quando há mais de 500 tickets. Precisamos adicionar índices adequados e otimizar a consulta para utilizar paginação de forma eficiente. Considere adicionar um índice composto em status + createdAt.",
       priority: "medium" as const,
       status: "open" as const,
       tags: ["performance", "database"],
     },
     {
-      title: "Update user documentation for new features",
+      title: "Atualizar documentação do usuário para novas funcionalidades",
       description:
-        "Several new features were released in the last sprint but the user documentation has not been updated. Need to document: new filtering options, export functionality, and the AI summary feature. Include screenshots and step-by-step instructions.",
+        "Diversas novas funcionalidades foram lançadas no último sprint, mas a documentação do usuário ainda não foi atualizada. É necessário documentar: novas opções de filtro, funcionalidade de exportação e o recurso de resumo com IA. Incluir capturas de tela e instruções passo a passo.",
       priority: "low" as const,
       status: "done" as const,
       tags: ["docs"],
     },
     {
-      title: "Memory leak in WebSocket connection handler",
+      title: "Vazamento de memória no manipulador de conexão WebSocket",
       description:
-        "There is a memory leak detected in the WebSocket connection handler. The server memory usage grows steadily over time and requires periodic restarts. Profiling shows that event listeners are not being properly cleaned up when clients disconnect. This is a critical bug affecting production stability.",
+        "Foi identificado um vazamento de memória no manipulador de conexão WebSocket. O uso de memória do servidor cresce continuamente ao longo do tempo e exige reinicializações periódicas. A análise de profiling mostra que os event listeners não estão sendo removidos corretamente quando os clientes se desconectam. Este é um bug crítico que afeta a estabilidade em produção.",
       priority: "high" as const,
       status: "in_progress" as const,
       tags: ["bug", "critical", "backend"],

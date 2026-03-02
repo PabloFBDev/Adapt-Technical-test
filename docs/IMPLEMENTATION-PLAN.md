@@ -1,140 +1,139 @@
-# Plan: Ops Copilot — Full Implementation
+# Plano de Implementação: Ops Copilot
 
-## Context
-Build the Ops Copilot project from scratch based on detailed specs in `docs/`. This is a ticket/incident management system with AI summaries, built with Next.js 14+ App Router, Prisma, NextAuth, Tailwind + shadcn/ui, Zod, and Vitest.
+## Contexto
+Construção do projeto Ops Copilot do zero, baseado nas especificações em `docs/`. Sistema de gerenciamento de tickets/incidentes com resumos por IA, construído com Next.js 14+ App Router, Prisma, NextAuth, Tailwind + shadcn/ui, Zod e Vitest.
 
-## Implementation Order
+## Ordem de Implementação
 
-### Phase 1: Project Scaffolding
-1. Initialize Next.js 14+ project with TypeScript strict, Tailwind CSS, App Router
-2. Install dependencies: prisma, @prisma/client, next-auth, bcryptjs, zod
-3. Install dev dependencies: vitest, @testing-library/react, @types/bcryptjs
-4. Configure `tsconfig.json` (strict: true, path aliases)
-5. Create `.env.example` with all documented variables (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, AI_PROVIDER, AI_CACHE_TTL_MS)
-6. Configure `vitest.config.ts` + `__tests__/setup.ts` (global mocks for Prisma, etc.)
+### Fase 1: Scaffolding do Projeto
+1. Inicializar projeto Next.js 14+ com TypeScript strict, Tailwind CSS, App Router
+2. Instalar dependências: prisma, @prisma/client, next-auth, bcryptjs, zod
+3. Instalar dependências de desenvolvimento: vitest, @testing-library/react, @types/bcryptjs
+4. Configurar `tsconfig.json` (strict: true, path aliases)
+5. Criar `.env.example` com todas as variáveis documentadas (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, AI_PROVIDER, AI_CACHE_TTL_MS)
+6. Configurar `vitest.config.ts` + `__tests__/setup.ts` (mocks globais para Prisma, etc.)
 
-### Phase 2: Database & ORM
-1. Create `prisma/schema.prisma` with User, Ticket, AuditLog, AICache models + enums (TicketStatus, TicketPriority, AuditAction)
-2. Note: JWT strategy — no session/account tables needed in Prisma
-3. Create `prisma/seed.ts` — seed default user (admin@opscopilot.com / password123, **hashed with bcrypt**) + sample tickets
-4. Create `src/lib/prisma.ts` — Prisma client singleton
-5. Run `npx prisma migrate dev` to apply schema
-6. Run `npx prisma db seed` to populate data
+### Fase 2: Banco de Dados e ORM
+1. Criar `prisma/schema.prisma` com models User, Ticket, AuditLog, AICache + enums (TicketStatus, TicketPriority, AuditAction)
+2. Nota: estratégia JWT — não é necessário tabelas de session/account no Prisma
+3. Criar `prisma/seed.ts` — seed de usuário padrão (admin@opscopilot.com / password123, **hash com bcrypt**) + tickets de exemplo
+4. Criar `src/lib/prisma.ts` — singleton do Prisma client
+5. Rodar `npx prisma migrate dev` para aplicar o schema
+6. Rodar `npx prisma db seed` para popular dados
 
-### Phase 3: Shared Types & Schemas
-1. Create `src/lib/ai/types.ts` — AIResult, AIStreamChunk, AIProvider interface
-2. Create `src/types/index.ts` — shared types (Ticket with relations, etc.)
-3. Create `src/schemas/ticket.ts` — createTicketSchema, updateTicketSchema, ticketQuerySchema
-4. Create `src/schemas/ai.ts` — summarizeSchema (union: ticketId OR {title, description})
+### Fase 3: Tipos e Schemas Compartilhados
+1. Criar `src/lib/ai/types.ts` — AIResult, AIStreamChunk, interface AIProvider
+2. Criar `src/types/index.ts` — tipos compartilhados (Ticket com relações, etc.)
+3. Criar `src/schemas/ticket.ts` — createTicketSchema, updateTicketSchema, ticketQuerySchema
+4. Criar `src/schemas/ai.ts` — summarizeSchema (union: ticketId OU {title, description})
 
-### Phase 4: Authentication
-1. Create `src/lib/auth.ts` — NextAuth config with Credentials provider, JWT strategy, bcrypt compare
-2. Create `src/app/api/auth/[...nextauth]/route.ts`
-3. Create `src/middleware.ts` — **Important:** matcher covers `/tickets/new`, `/tickets/:path*/edit`, `/api/ai/:path*`. For `/api/tickets/:path*`, the GET (public) vs POST/PATCH (protected) distinction is handled **inside each route handler** with `getServerSession()` checks, not in middleware.
+### Fase 4: Autenticação
+1. Criar `src/lib/auth.ts` — configuração NextAuth com Credentials provider, estratégia JWT, bcrypt compare
+2. Criar `src/app/api/auth/[...nextauth]/route.ts`
+3. Criar `src/middleware.ts` — **Importante:** matcher cobre `/tickets/new`, `/tickets/:path*/edit`, `/api/ai/:path*`. Para `/api/tickets/:path*`, a distinção GET (público) vs POST/PATCH (protegido) é tratada **dentro de cada route handler** com checks de `getServerSession()`, não no middleware.
 
-### Phase 5: AI Provider Layer (Multi-Provider)
-1. Create `src/lib/ai/prompt.ts` — Shared system prompt + result parser for all providers
-2. Create `src/lib/ai/errors.ts` — `AIProviderError` class + `extractErrorMessage()` for unified error handling across providers (401, 429, 403, timeout, safety filters, nested SDK messages)
-3. Create `src/lib/ai/stream-utils.ts` — Shared streaming utilities: `chunkText`, `delay`, `simulateStream` — reused by MockAIProvider and other providers
-4. Create `src/lib/ai/mock-provider.ts` — MockAIProvider with streaming simulation (50-100ms delay per chunk via `simulateStream`), deterministic results based on keywords
-5. Create `src/lib/ai/openai-provider.ts` — OpenAIProvider using gpt-4o-mini with streaming, uses `extractErrorMessage` for error handling
-6. Create `src/lib/ai/anthropic-provider.ts` — AnthropicProvider using claude-haiku-4-5 with streaming, uses `extractErrorMessage` for error handling
-7. Create `src/lib/ai/gemini-provider.ts` — GeminiProvider using gemini-2.0-flash with streaming, uses `extractErrorMessage` for error handling
-8. Create `src/lib/ai/factory.ts` — getAIProvider(settings, provider?) + getAvailableProviders(settings). Uses `AIProviderError` when API key is missing. Supports runtime provider selection.
-9. Create `src/lib/ai/cache.ts` — get/set/invalidate cache logic. **Invalidation** is called from the PATCH ticket handler when title or description change.
-10. Create `src/app/api/ai/providers/route.ts` — GET endpoint returning available providers based on configured API keys.
+### Fase 5: Camada de AI Provider (Multi-Provider)
+1. Criar `src/lib/ai/prompt.ts` — System prompt compartilhado + parser de resultado para todos os providers
+2. Criar `src/lib/ai/errors.ts` — classe `AIProviderError` + `extractErrorMessage()` para tratamento unificado de erros entre providers (401, 429, 403, timeout, filtros de segurança, mensagens aninhadas de SDKs)
+3. Criar `src/lib/ai/stream-utils.ts` — Utilitários de streaming compartilhados: `chunkText`, `delay`, `simulateStream` — reutilizados pelo MockAIProvider e outros providers
+4. Criar `src/lib/ai/mock-provider.ts` — MockAIProvider com simulação de streaming (delay de 50-100ms por chunk via `simulateStream`), resultados determinísticos baseados em keywords
+5. Criar `src/lib/ai/openai-provider.ts` — OpenAIProvider usando gpt-4o-mini com streaming, usa `extractErrorMessage` para tratamento de erros
+6. Criar `src/lib/ai/anthropic-provider.ts` — AnthropicProvider usando claude-haiku-4-5 com streaming, usa `extractErrorMessage` para tratamento de erros
+7. Criar `src/lib/ai/gemini-provider.ts` — GeminiProvider usando gemini-2.0-flash com streaming, usa `extractErrorMessage` para tratamento de erros
+8. Criar `src/lib/ai/factory.ts` — getAIProvider(settings, provider?) + getAvailableProviders(settings). Usa `AIProviderError` quando API key está ausente. Suporta seleção de provider em runtime.
+9. Criar `src/lib/ai/cache.ts` — lógica de get/set/invalidate de cache. **Invalidação** é chamada no handler PATCH do ticket quando título ou descrição mudam.
+10. Criar `src/app/api/ai/providers/route.ts` — endpoint GET retornando providers disponíveis baseado nas API keys configuradas.
 
-### Phase 6: API Route Handlers + Audit Logic
-1. Create `src/lib/utils.ts` — handleApiError helper, cn utility
-2. Create `src/app/api/tickets/route.ts` — GET (list, public, paginated) + POST (create, protected, creates AuditLog with action `created`)
-3. Create `src/app/api/tickets/[id]/route.ts` — GET (detail, public) + PATCH (update, protected):
-   - Computes diff for each changed field
-   - Creates AuditLog: action `status_changed` if status changed, `updated` otherwise
-   - Stores changes as `{ field: { from, to } }`
-   - Calls cache invalidation if title/description changed
-4. Create `src/app/api/ai/summarize/route.ts` — POST with SSE streaming:
-   - Check cache first (by ticketId) → return cached if valid (non-streaming)
-   - Call AIProvider.generateSummary() → stream via SSE
-   - Save result to AICache on completion
+### Fase 6: Route Handlers da API + Lógica de Auditoria
+1. Criar `src/lib/utils.ts` — helper handleApiError, utilitário cn
+2. Criar `src/app/api/tickets/route.ts` — GET (listagem, público, paginado) + POST (criação, protegido, cria AuditLog com action `created`)
+3. Criar `src/app/api/tickets/[id]/route.ts` — GET (detalhe, público) + PATCH (atualização, protegido):
+   - Calcula diff para cada campo alterado
+   - Cria AuditLog: action `status_changed` se status mudou, `updated` caso contrário
+   - Armazena mudanças como `{ field: { from, to } }`
+   - Chama invalidação de cache se título/descrição mudaram
+4. Criar `src/app/api/ai/summarize/route.ts` — POST com streaming SSE:
+   - Verifica cache primeiro (por ticketId) → retorna cacheado se válido (sem streaming)
+   - Chama AIProvider.generateSummary() → stream via SSE
+   - Salva resultado no AICache ao completar
 
-### Phase 7-8: UI Features (vertical slices per feature)
+### Fases 7-8: Features de UI (fatias verticais por feature)
 
-**7a. Layout & Auth UI**
-- Install shadcn/ui components: button, input, textarea, select, badge, card, skeleton, label, dropdown-menu, separator, toast (sonner)
-- Create `src/app/layout.tsx` — root layout with SessionProvider, Toaster, fonts, metadata
-- Create `src/components/auth/login-form.tsx`
-- Create `src/components/auth/auth-guard.tsx` — client-side auth check wrapper
-- Create `src/app/login/page.tsx`
-- Create `src/app/page.tsx` — redirect to /tickets
+**7a. Layout e UI de Auth**
+- Instalar componentes shadcn/ui: button, input, textarea, select, badge, card, skeleton, label, dropdown-menu, separator, toast (sonner)
+- Criar `src/app/layout.tsx` — layout raiz com SessionProvider, Toaster, fontes, metadata
+- Criar `src/components/auth/login-form.tsx`
+- Criar `src/components/auth/auth-guard.tsx` — wrapper de verificação de auth client-side
+- Criar `src/app/login/page.tsx`
+- Criar `src/app/page.tsx` — redirect para /tickets
 
-**7b. Ticket Listing**
-- Create `src/components/tickets/status-badge.tsx`
-- Create `src/components/tickets/priority-badge.tsx`
-- Create `src/components/tickets/ticket-card.tsx`
-- Create `src/components/tickets/ticket-filters.tsx` — status/priority selects, search with 300ms debounce
-- Create `src/components/tickets/ticket-list.tsx` — with pagination, loading skeleton, empty state
-- Create `src/app/tickets/page.tsx` — listing page using above components
+**7b. Listagem de Tickets**
+- Criar `src/components/tickets/status-badge.tsx`
+- Criar `src/components/tickets/priority-badge.tsx`
+- Criar `src/components/tickets/ticket-card.tsx`
+- Criar `src/components/tickets/ticket-filters.tsx` — selects de status/priority, busca com debounce de 300ms
+- Criar `src/components/tickets/ticket-list.tsx` — com paginação, skeleton de loading, empty state
+- Criar `src/app/tickets/page.tsx` — página de listagem usando os componentes acima
 
-**7c. Ticket Creation**
-- Create `src/components/tickets/tag-input.tsx` — chips/tags input component
-- Create `src/components/tickets/ticket-form.tsx` — form with Zod validation, inline errors
-- Create `src/app/tickets/new/page.tsx` — create ticket page with success toast + redirect
+**7c. Criação de Ticket**
+- Criar `src/components/tickets/tag-input.tsx` — componente de input com chips/tags
+- Criar `src/components/tickets/ticket-form.tsx` — formulário com validação Zod, erros inline
+- Criar `src/app/tickets/new/page.tsx` — página de criação com toast de sucesso + redirect
 
-**7d. Ticket Detail + AI + Audit**
-- Create `src/components/ai/ai-summary-skeleton.tsx`
-- Create `src/components/ai/ai-summary.tsx` — SSE consumption, progressive rendering, cached indicator
-- Create `src/components/audit/audit-timeline.tsx` — timeline/list of changes (most recent first)
-- Create `src/components/tickets/ticket-detail.tsx` — full ticket view with status change inline
-- Create `src/app/tickets/[id]/page.tsx` — detail page with AI summary button + audit timeline
+**7d. Detalhe do Ticket + IA + Auditoria**
+- Criar `src/components/ai/ai-summary-skeleton.tsx`
+- Criar `src/components/ai/ai-summary.tsx` — consumo de SSE, renderização progressiva, indicador de cache
+- Criar `src/components/audit/audit-timeline.tsx` — timeline/lista de mudanças (mais recente primeiro)
+- Criar `src/components/tickets/ticket-detail.tsx` — visualização completa com mudança de status inline
+- Criar `src/app/tickets/[id]/page.tsx` — página de detalhe com botão de resumo IA + timeline de auditoria
 
-**7e. Ticket Editing**
-- Create `src/app/tickets/[id]/edit/page.tsx` — edit form pre-loaded with current values
+**7e. Edição de Ticket**
+- Criar `src/app/tickets/[id]/edit/page.tsx` — formulário de edição pré-carregado com valores atuais
 
-### Phase 9: Tests (79 testes, 9 arquivos)
-1. Create `__tests__/setup.ts` — global mocks (Prisma client mock, NextAuth session mock)
-2. Create `__tests__/lib/ai/mock-provider.test.ts` — valid AIResult, correct streaming chunks, keyword-based risk/categories
-3. Create `__tests__/lib/ai/factory.test.ts` — returns MockAIProvider by default, validates API keys, throws AIProviderError
-4. Create `__tests__/lib/ai/cache.test.ts` — get/set/invalidate/TTL expiry
-5. Create `__tests__/lib/ai/errors.test.ts` — AIProviderError, extractErrorMessage (401, 429, 403, timeout, safety filters, nested messages)
-6. Create `__tests__/lib/ai/stream-utils.test.ts` — chunkText, delay, simulateStream
-7. Create `__tests__/schemas/ticket.test.ts` — valid/invalid inputs, defaults, partial updates
-8. Create `__tests__/schemas/ai.test.ts` — ticketId OR {title,description}, rejects invalid
-9. Create `__tests__/api/tickets.test.ts` — POST 201, POST 400, GET list, GET filtered, PATCH + audit log
-10. Create `__tests__/api/ai-summarize.test.ts` — SSE stream, cached response, 404 for missing ticket
+### Fase 9: Testes (79 testes, 9 arquivos)
+1. Criar `__tests__/setup.ts` — mocks globais (mock do Prisma client, mock de session NextAuth)
+2. Criar `__tests__/lib/ai/mock-provider.test.ts` — AIResult válido, chunks de streaming corretos, classificação por keywords
+3. Criar `__tests__/lib/ai/factory.test.ts` — retorna MockAIProvider por padrão, valida API keys, lança AIProviderError
+4. Criar `__tests__/lib/ai/cache.test.ts` — get/set/invalidate/expiração de TTL
+5. Criar `__tests__/lib/ai/errors.test.ts` — AIProviderError, extractErrorMessage (401, 429, 403, timeout, filtros de segurança, mensagens aninhadas)
+6. Criar `__tests__/lib/ai/stream-utils.test.ts` — chunkText, delay, simulateStream
+7. Criar `__tests__/schemas/ticket.test.ts` — inputs válidos/inválidos, defaults, partial updates
+8. Criar `__tests__/schemas/ai.test.ts` — ticketId OU {title,description}, rejeita inválido
+9. Criar `__tests__/api/tickets.test.ts` — POST 201, POST 400, GET lista, GET filtrado, PATCH + audit log
+10. Criar `__tests__/api/ai-summarize.test.ts` — stream SSE, resposta cacheada, 404 para ticket inexistente
 
-### Phase 10: AI Settings Panel
-1. Add `AIConfig` model to `prisma/schema.prisma` — singleton pattern (id="singleton"), fields for defaultProvider, API keys, models, cacheTtlMs
-2. Run `npx prisma migrate dev --name add-ai-config`
-3. Create `src/lib/ai/settings.ts` — `getAISettings()` (DB > env > default), `maskApiKey()`
-4. Refactor `src/lib/ai/factory.ts` — `getAIProvider(settings, provider?)` and `getAvailableProviders(settings)` receive settings as param
-5. Refactor providers (`openai-provider.ts`, `anthropic-provider.ts`, `gemini-provider.ts`) — accept `{ apiKey, model }` in constructor
-6. Refactor `src/lib/ai/cache.ts` — `setCachedResult()` accepts optional `cacheTtlMs` param
-7. Add `aiConfigSchema` to `src/schemas/ai.ts` — Zod validation for settings
-8. Create `src/app/api/settings/route.ts` — GET (masked keys) + PUT (upsert, skip masked values)
-9. Refactor `src/app/api/ai/providers/route.ts` — use `getAISettings()`
-10. Refactor `src/app/api/ai/summarize/route.ts` — use `getAISettings()` for provider resolution and cache TTL
-11. Create `src/app/settings/page.tsx` — settings form (provider select, API key inputs with visibility toggle, model inputs, cache TTL)
-12. Update `src/components/layout/navbar.tsx` — add Settings icon link
-13. Update `src/middleware.ts` — add `/settings` and `/api/settings` to matcher + rate limiting
-14. Update `__tests__/setup.ts` — add `aIConfig` mock
-15. Update `__tests__/lib/ai/factory.test.ts` — pass settings param
+### Fase 10: Painel de Configuração de IA
+1. Adicionar model `AIConfig` ao `prisma/schema.prisma` — padrão singleton (id="singleton"), campos para defaultProvider, API keys, modelos, cacheTtlMs
+2. Rodar `npx prisma migrate dev --name add-ai-config`
+3. Criar `src/lib/ai/settings.ts` — `getAISettings()` (DB > env > default), `maskApiKey()`
+4. Refatorar `src/lib/ai/factory.ts` — `getAIProvider(settings, provider?)` e `getAvailableProviders(settings)` recebem settings como parâmetro
+5. Refatorar providers (`openai-provider.ts`, `anthropic-provider.ts`, `gemini-provider.ts`) — aceitam `{ apiKey, model }` no constructor
+6. Refatorar `src/lib/ai/cache.ts` — `setCachedResult()` aceita parâmetro opcional `cacheTtlMs`
+7. Adicionar `aiConfigSchema` ao `src/schemas/ai.ts` — validação Zod para settings
+8. Criar `src/app/api/settings/route.ts` — GET (keys mascaradas) + PUT (upsert, ignora valores mascarados)
+9. Refatorar `src/app/api/ai/providers/route.ts` — usar `getAISettings()`
+10. Refatorar `src/app/api/ai/summarize/route.ts` — usar `getAISettings()` para resolução de provider e cache TTL
+11. Criar `src/app/settings/page.tsx` — formulário de settings (select de provider, inputs de API key com toggle de visibilidade, inputs de modelo, cache TTL)
+12. Atualizar `src/components/layout/navbar.tsx` — adicionar link de Settings
+13. Atualizar `src/middleware.ts` — adicionar `/settings` e `/api/settings` ao matcher + rate limiting
+14. Atualizar `__tests__/setup.ts` — adicionar mock de `aIConfig`
+15. Atualizar `__tests__/lib/ai/factory.test.ts` — passar parâmetro settings
 
-### Phase 11: Final Polish & Verification
-1. Copy `docs/README.md` to root `README.md`
-2. Verify `.env.example` is complete
-3. `npm run lint` — fix any lint errors
-4. `npm run build` — TypeScript strict compiles without errors
-5. `npm test` — all tests pass
-6. Manual end-to-end test: login → create ticket → list → filter → detail → edit → change status → generate AI summary → verify audit timeline
+### Fase 11: Polimento Final e Verificação
+1. Verificar `.env.example` está completo
+2. `npm run lint` — corrigir erros de lint
+3. `npm run build` — TypeScript strict compila sem erros
+4. `npm test` — todos os testes passam
+5. Teste manual end-to-end: login → criar ticket → listar → filtrar → detalhe → editar → mudar status → gerar resumo IA → verificar timeline de auditoria
 
-## Key Technical Decisions
-- NextAuth v4 (JWT strategy, no DB adapter for sessions)
-- Middleware protects page routes; API route handlers check session internally for method-level granularity
-- Multi-provider support: Mock (default), OpenAI, Anthropic, Gemini — selectable via UI dropdown
-- AI settings panel: API keys, models, default provider, cache TTL — configurable via UI, stored in DB
-- Settings resolution: DB > env var > default (no redeploy needed to change AI config)
-- MockAIProvider as fallback — deterministic, no API key needed
-- SSE for AI streaming (not WebSockets)
-- Offset-based pagination (page/limit)
-- Audit log diff computed in PATCH handler, stored as JSON
-- AI cache invalidated on ticket title/description edits
+## Decisões Técnicas Chave
+- NextAuth v4 (estratégia JWT, sem DB adapter para sessions)
+- Middleware protege rotas de página; route handlers verificam session internamente para granularidade por método HTTP
+- Suporte multi-provider: Mock (padrão), OpenAI, Anthropic, Gemini — selecionável via dropdown na UI
+- Painel de configuração de IA: API keys, modelos, provider padrão, cache TTL — configurável via UI, armazenado no banco
+- Resolução de settings: DB > env var > default (sem necessidade de redeploy para mudar config de IA)
+- MockAIProvider como fallback — determinístico, sem API key necessária
+- SSE para streaming de IA (não WebSockets)
+- Paginação baseada em offset (page/limit)
+- Diff de auditoria computado no handler PATCH, armazenado como JSON
+- Cache de IA invalidado ao editar título/descrição do ticket

@@ -71,6 +71,48 @@ describe("GET /api/tickets", () => {
     );
   });
 
+  it("should filter by priority", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findMany.mockResolvedValue([]);
+    mockPrisma.ticket.count.mockResolvedValue(0);
+
+    const request = new Request("http://localhost/api/tickets?priority=high");
+    await GET(request);
+
+    expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ priority: "high" }),
+      })
+    );
+  });
+
+  it("should filter by tags", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findMany.mockResolvedValue([]);
+    mockPrisma.ticket.count.mockResolvedValue(0);
+
+    const request = new Request("http://localhost/api/tickets?tags=bug,urgent");
+    await GET(request);
+
+    expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tags: { hasSome: ["bug", "urgent"] },
+        }),
+      })
+    );
+  });
+
+  it("should return error for invalid query params", async () => {
+    mockPrisma.ticket.findMany.mockRejectedValue(new Error("DB error"));
+    mockPrisma.ticket.count.mockRejectedValue(new Error("DB error"));
+
+    const request = new Request("http://localhost/api/tickets");
+    const response = await GET(request);
+
+    expect(response.status).toBe(500);
+  });
+
   it("should search by title/description", async () => {
     mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
     mockPrisma.ticket.findMany.mockResolvedValue([]);
@@ -304,5 +346,191 @@ describe("PATCH /api/tickets/:id", () => {
     });
 
     expect(response.status).toBe(200);
+  });
+
+  it("should return 404 when ticket does not exist", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(null);
+
+    const request = new Request("http://localhost/api/tickets/non-existent", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "done" }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "non-existent" }),
+    });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should update title and invalidate AI cache", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+    const updatedTicket = { ...mockTicket, title: "Updated title" };
+    mockPrisma.ticket.update.mockResolvedValue(updatedTicket as never);
+    mockPrisma.auditLog.create.mockResolvedValue({} as never);
+    mockPrisma.aICache.deleteMany.mockResolvedValue({ count: 0 } as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Updated title" }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "updated",
+          changes: expect.objectContaining({
+            title: { from: "Test ticket", to: "Updated title" },
+          }),
+        }),
+      })
+    );
+    // Should invalidate AI cache when title changes
+    expect(mockPrisma.aICache.deleteMany).toHaveBeenCalledWith({
+      where: { ticketId: "ticket-1" },
+    });
+  });
+
+  it("should update description and invalidate AI cache", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+    const newDesc = "A completely new description for the ticket.";
+    const updatedTicket = { ...mockTicket, description: newDesc };
+    mockPrisma.ticket.update.mockResolvedValue(updatedTicket as never);
+    mockPrisma.auditLog.create.mockResolvedValue({} as never);
+    mockPrisma.aICache.deleteMany.mockResolvedValue({ count: 0 } as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: newDesc }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "updated",
+          changes: expect.objectContaining({
+            description: { from: mockTicket.description, to: newDesc },
+          }),
+        }),
+      })
+    );
+    expect(mockPrisma.aICache.deleteMany).toHaveBeenCalled();
+  });
+
+  it("should update priority without invalidating AI cache", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+    const updatedTicket = { ...mockTicket, priority: "high" };
+    mockPrisma.ticket.update.mockResolvedValue(updatedTicket as never);
+    mockPrisma.auditLog.create.mockResolvedValue({} as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priority: "high" }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "updated",
+          changes: expect.objectContaining({
+            priority: { from: "medium", to: "high" },
+          }),
+        }),
+      })
+    );
+    // Should NOT invalidate cache for priority changes
+    expect(mockPrisma.aICache.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("should update tags with deduplication", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+    const updatedTicket = { ...mockTicket, tags: ["urgent", "backend"] };
+    mockPrisma.ticket.update.mockResolvedValue(updatedTicket as never);
+    mockPrisma.auditLog.create.mockResolvedValue({} as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tags: ["urgent", "backend", "urgent"] }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "updated",
+          changes: expect.objectContaining({
+            tags: { from: ["test"], to: ["backend", "urgent"] },
+          }),
+        }),
+      })
+    );
+  });
+
+  it("should not detect change when tags are the same (different order)", async () => {
+    const ticketWithTags = { ...mockTicket, tags: ["a", "b"] };
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(ticketWithTags as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tags: ["b", "a"] }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    // No change → no audit log
+    expect(mockPrisma.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("should return 400 for invalid PATCH body", async () => {
+    mockGetSession.mockResolvedValue({ user: mockUser, expires: "" });
+    mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket as never);
+
+    const request = new Request("http://localhost/api/tickets/ticket-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priority: "critical" }),
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "ticket-1" }),
+    });
+
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toBe("Validation failed");
   });
 });

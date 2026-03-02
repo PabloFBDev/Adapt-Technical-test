@@ -127,6 +127,67 @@ describe("MockAIProvider", () => {
     expect(result.categories).toContain("security");
   });
 
+  it("should classify incident/outage tickets as high risk", async () => {
+    const chunks = await collectChunks({
+      title: "Service degradation",
+      description: "There is a major outage affecting all users in production.",
+    });
+
+    const result = getDoneResult(chunks);
+    expect(result.riskLevel).toBe("high");
+    expect(result.categories).toContain("incident");
+  });
+
+  it("should add subtask step for long descriptions (>200 chars)", async () => {
+    const longDescription = "A".repeat(250) + " this is a very detailed ticket description.";
+    const chunks = await collectChunks({
+      title: "Update documentation",
+      description: longDescription,
+    });
+
+    const result = getDoneResult(chunks);
+    expect(result.nextSteps).toContain("Considerar dividir em subtarefas menores.");
+  });
+
+  it("should not duplicate incident category when bug + outage", async () => {
+    const chunks = await collectChunks({
+      title: "Bug causing outage",
+      description: "A critical bug is causing a system outage for all users.",
+    });
+
+    const result = getDoneResult(chunks);
+    expect(result.riskLevel).toBe("high");
+    expect(result.categories).toContain("bug");
+    expect(result.categories).toContain("incident");
+    // Should not have duplicates
+    const uniqueCategories = [...new Set(result.categories)];
+    expect(result.categories.length).toBe(uniqueCategories.length);
+  });
+
+  it("should not duplicate security category when bug + vulnerability", async () => {
+    const chunks = await collectChunks({
+      title: "Bug in authentication",
+      description: "There is a security vulnerability in the login system.",
+    });
+
+    const result = getDoneResult(chunks);
+    expect(result.riskLevel).toBe("high");
+    expect(result.categories).toContain("bug");
+    expect(result.categories).toContain("security");
+    const uniqueCategories = [...new Set(result.categories)];
+    expect(result.categories.length).toBe(uniqueCategories.length);
+  });
+
+  it("should not add subtask step for short descriptions", async () => {
+    const chunks = await collectChunks({
+      title: "Update documentation",
+      description: "Short description for the task.",
+    });
+
+    const result = getDoneResult(chunks);
+    expect(result.nextSteps).not.toContain("Considerar dividir em subtarefas menores.");
+  });
+
   it("should have summary chunks that form the complete summary", async () => {
     const chunks = await collectChunks({
       title: "Test ticket",
