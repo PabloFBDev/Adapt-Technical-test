@@ -3,7 +3,6 @@
 Sistema de registro de tarefas e incidentes com geração automática de resumos, próximos passos e análise de risco por IA. Criado como teste técnico Full-Stack TypeScript.
 
 - **Produção:** https://opscopilot.vercel.app/
-- **Repositório:** https://github.com/PabloFBDev/Adapt-Technical-test
 
 ---
 
